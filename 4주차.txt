@@ -1,0 +1,129 @@
+1. API 구현
+사용자, 스마트폰 -> UI
+시스템, 시스템 -> API
+API 명세서(input 뭐고 output 뭔지 / == readme), PHP(회원가입, 유저조회)
+
+2. HTTP
+클라이언트 <-> 서버
+클라이언트가 보내는 데이터: 패킷(1. header 2. body)
+response message / request message
+header: meta-data, 실제data
+
+3. http method
+request message: method + header + body
+1) get: 조회
+
+get ... ? key_value&key_value&key_value&...
+조회하기위한 데이터(데이터를 위한 데이터, !=meta-data): query string (ex. 검색어, 필터, 페이지)
+
+2) post: 생성(db에 저장)
+query string (x), body에 붙여서 전송
+형식: form(전통적), raw(xml: 태그사용, 데이터 너무 많음, json: 객체형태로 바로 mapping 가능), ....
+
+get, post 목적에 따라 구분되기 때문에 보안에 관한 문제가 의미없음
+패킷 훔치면 post의 body 볼 수 있음
+
+3) put: 수정
+4) patch: 일부수정
+5) delete: 삭제
+
+4. rest api -> architecture, 규칙
+get방식으로 2)~5) 다 처리할 수 있음
+규칙 지킴 -> restful api
+
+method + uri
+verb + "noun"
+
+@@@ 명사로 쓰기 @@@
+
+get / users -> 사용자 조회
+post / user -> 회원가입
+put / users / n -> n번째 user 수정
+patch / users / n -> n번째 user 일부정보 변경
+delete / users / n-> n번째 user 삭제
+
+n: path variable
+
+query string vs path variable
+
+query string: 검색, 필터, 페이지, 조건
+get /users?age=20
+
+path variable: 식별, 특정 한가지
+get /users/20(나이)
+
+차단한 유저 보기
+get /blocked-users
+
+유저 차단하기
+post / blocked-users (클라이언트입장, (o))
+patch / blocking (서버입장, (x))
+
+
+/var/www/html로 이동 -> clone or download
+nginx 설정파일 수정, 재시작
+phpstorm 설치, aws 연결, 키페어 로딩, 루트패스 설정
+
+framework vs library
+
+postman 설치 (api 개발)
+
+nginx error log 확인
+
+apt get composer 설치
+composer install
+composer.json
+pdosqlconnect
+https쓰면 안되는듯
+'GET', '/users/{userID}'
+
+... where id = ?;
+하나만 있어도 리스트 형태로
+결과가 하나일때 배열x(return $res[0] 형태로), 바로 object 쓸수있도록
+
+validation(유효성 검사)
+
+get, delete -> body 없음
+
+에러 주석처리
+
+if문으로 유효성검사
+
+intval -> 모든 변수를 정수로 표현
+
+get['keyword']
+
+isset
+
+mysql like
+
+... where ... like concat('%' , ? , '%');
+
+--- db 수정내역 ---
+평점 round
+리뷰 사진, 주문한 메뉴 group_concat, 별도 쿼리 삭제
+restaurant 테이블에 super_red_week, our_village_plus 컬럼 추가, 테이블 삭제
+
+query string -> $user_id = $_GET['user_id'];
+path_variable -> $rest_id = $vars['rest_id'];
+	
+
+한글깨짐: https://www.hides.kr/665
+
+에러코드
+100: 정상
+101: 사용자 오류
+102: 식당 카테고리 오류
+103: 식당 id 오류
+104: 메뉴 id 오류
+105: 주문번호 오류
+
+Q. 정상인데 검색결과 없는 경우에도 에러코드 추가해야하는지?
+Q. user 로그인 상태로 가정?
+Q. _get, $vars 차이
+Q.   $res->result = getRestaurantDetail($vars["rest_id"]);
+      $res->result = getRestaurantDetail($rest_id);
+path_variable -> 둘 다 됨, query_string -> 위에꺼 오류뜸
+Q. 다른 종류의 배열을 보낼 때 어떻게 구분하는지
+
+mysql 서버 이전: https://raisonde.tistory.com/entry/mysql-db를-전부-백업해서-옮기기서버-이전-등
