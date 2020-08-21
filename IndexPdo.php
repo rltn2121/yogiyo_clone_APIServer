@@ -1,6 +1,6 @@
 <?php
 
-// 1.1 찜한 음식점 개수
+// 1 찜한 음식점 개수, 정보
 function getFavoriteCount()
 {
     $pdo = pdoSqlConnect();
@@ -18,7 +18,6 @@ function getFavoriteCount()
 
     return $res[0];
 }
-// 1.2. 찜한 음식점 정보
 function getFavoriteRestaurant()
 {
     $pdo = pdoSqlConnect();
@@ -80,7 +79,7 @@ function addFavorite($rest_id)
     $st = null;
     $pdo = null;
 }
-// 2.3. 찜 상태 (yes / no)
+// 2.3. 찜 상태 확인 / 변경
 function getFavoriteStatus($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -97,7 +96,6 @@ where user_id='10000001' and restaurant_id=?;";
 
     return intval($res[0]['status']);
 }
-// 2.4. status no -> yes
 function updateFavoriteToTrue($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -112,7 +110,6 @@ function updateFavoriteToTrue($rest_id)
     $st = null;
     $pdo = null;
 }
-// 2.5. status yes -> no
 function updateFavoriteToFalse($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -128,7 +125,7 @@ function updateFavoriteToFalse($rest_id)
     $pdo = null;
 }
 
-// 3.1. 우리동네 플러스
+// 3. 우리동네 플러스, 슈퍼레드위크, 일반음식점
 function getOurVillagePlusByCategory($category)
 {
     $where_clause="";
@@ -213,7 +210,6 @@ where restaurant.our_village_plus = 'Y'
 
     return $res;
 }
-// 3.2. 슈퍼 레드 위크
 function getSuperRedWeekPlusByCategory($category)
 {
     $where_clause="";
@@ -292,7 +288,6 @@ where super_red_week = 'Y' and restaurant.region = (select region from users whe
 
     return $res;
 }
-// 3.3. 일반 음식점
 function getNormalRestaurantByCategory($category)
 {
     $where_clause="";
@@ -403,13 +398,91 @@ group by restaurant_id;";
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
+    if(!isKeywordExist($keyword)){
+        addRecentSearchKeyword($keyword);
+    }
     $st = null;
     $pdo = null;
 
     return $res;
 }
 
-// 5.1. 식당 메인
+// 5~7 최근 검색어 조회, 삭제, 전체삭제
+function getRecentSearchKeyword(){
+    $pdo = pdoSqlConnect();
+    $query = "select keyword
+    from recent_search_keyword
+    where user_id=10000001
+    order by created_at;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+    return $res;
+}
+function addRecentSearchKeyword($keyword){
+    $pdo = pdoSqlConnect();
+    $query = "insert into recent_search_keyword (user_id, keyword) values ('10000001',?);";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$keyword]);
+    $st = null;
+    $pdo = null;
+}
+function deleteRecentSearchKeyword($idx){
+    $pdo = pdoSqlConnect();
+    $query = "delete from recent_search_keyword where idx = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$idx]);
+
+    $st = null;
+    $pdo = null;
+}
+function deleteAllRecentSearchKeyword(){
+    $pdo = pdoSqlConnect();
+    $query = "delete from recent_search_keyword where user_id = 10000001;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+
+    $st = null;
+    $pdo = null;
+}
+function isKeywordExist($keyword){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM recent_search_keyword WHERE user_id = 10000001 and keyword=?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$keyword]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+function isKeywordIdxExist($idx){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM recent_search_keyword WHERE idx = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$idx]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+
+// 8. 식당 메인, 메뉴, 리뷰, 정보
 function getRestaurantMain($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -465,7 +538,6 @@ where restaurant_id = ?;";
 
     return $res[0];
 }
-// 5.2. 식당 인기메뉴
 function getRestaurantBestMenu($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -488,7 +560,6 @@ order by restaurant_id, sales desc limit 2;";
 
     return $res;
 }
-// 5.3. 식당 메뉴
 function getRestaurantMenu($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -504,7 +575,6 @@ where restaurant_id=?;";
 
     return $res;
 }
-// 5.4. 식당 리뷰
 function getRestaurantReview($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -539,7 +609,6 @@ group by review_id;";
 
     return $res;
 }
-// 5.5. 식당 정보
 function getRestaurantInfo($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -568,7 +637,7 @@ where restaurant_id = ?;";
     return $res[0];
 }
 
-// 6. 메뉴 추가 옵션 선택
+// 9. 메뉴 추가 옵션 선택
 function getMenuOption($menu_id)
 {
     $pdo = pdoSqlConnect();
@@ -588,13 +657,13 @@ order by option_type;";
     return $res;
 }
 
-// 7.1. 터치주문 수
+// 10. 터치 / 전화주문 조회
 function getTouchOrderCount()
 {
     $pdo = pdoSqlConnect();
     $query = "select count(*) as touch_num
 from orders
-where user_id= 10000001 and order_type='touch';";
+where user_id= 10000001 and order_type='터치';";
     $st = $pdo->prepare($query);
     $st->execute();
     $st->setFetchMode(PDO::FETCH_ASSOC);
@@ -605,13 +674,12 @@ where user_id= 10000001 and order_type='touch';";
 
     return $res[0];
 }
-// 7.2. 전화주문 수
 function getCallOrderCount()
 {
     $pdo = pdoSqlConnect();
     $query = "select count(*) as call_num
 from orders
-where user_id=10000001 and order_type='call';";
+where user_id=10000001 and order_type='전화';";
     $st = $pdo->prepare($query);
     $st->execute();
     $st->setFetchMode(PDO::FETCH_ASSOC);
@@ -622,13 +690,12 @@ where user_id=10000001 and order_type='call';";
 
     return $res[0];
 }
-// 7.3. 터치주문 목록
 function getTouchOrderList()
 {
     $pdo = pdoSqlConnect();
     $query = "select order_id, order_type, date_format(orders.created_at, '%Y.%m.%d %H:%i') as order_date, delivery_status, restaurant_name, restaurant.image_url,delivery_status, group_concat(distinct concat(menu_name, '/', quantity) separator ',') as order_info
        from ((orders left outer join ordered_menu using (order_id) ) left outer join restaurant using (restaurant_id)) left outer join menu using (menu_id)
-where user_id= 10000001 and order_type='touch'
+where user_id= 10000001 and order_type='터치'
 group by order_id;";
     $st = $pdo->prepare($query);
     $st->execute();
@@ -640,13 +707,12 @@ group by order_id;";
 
     return $res;
 }
-// 7.4. 전화주문 목록
 function getCallOrderList()
 {
     $pdo = pdoSqlConnect();
     $query = "select order_id, order_type,date_format(orders.created_at, '%Y.%m.%d %H:%i') as order_date, delivery_status, restaurant_name, restaurant.image_url,delivery_status, group_concat(distinct concat(menu_name, '/', quantity) separator ',') as order_info
        from ((orders left outer join ordered_menu using (order_id) ) left outer join restaurant using (restaurant_id)) left outer join menu using (menu_id)
-where user_id= 10000001 and order_type='call'
+where user_id= 10000001 and order_type='전화'
 group by order_id;";
     $st = $pdo->prepare($query);
     $st->execute();
@@ -659,21 +725,21 @@ group by order_id;";
     return $res;
 }
 
-// 8.1. 주문 상세 보기
+// 11. 주문 상세 보기
 function getOrderInfo($order_id)
 {
     $pdo = pdoSqlConnect();
     // get order information
     $query = "select restaurant_name,delivery_status,order_id,date_format(orders.created_at, '%Y.%m.%d %H:%i') as order_date,
        concat((select sum(price + IFNULL(extra_charge, 0))
-        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_option.extra_charge
-              from ((ordered_menu left outer join ordered_option using (menu_id)) left outer join menu using (menu_id))
+        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_menu.extra_charge
+              from (ordered_menu  left outer join menu using (menu_id))
                        left outer join additional_option using (option_id)
               where ordered_menu.order_id = ?) as temp),'원' )as sum_menu_price,
        concat(orders.delivery_price, '원') as delivery_price,concat(orders.delivery_discount,'원')as delivery_discount,
        concat(((select sum(price + IFNULL(extra_charge, 0))
-        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_option.extra_charge
-              from ((ordered_menu left outer join ordered_option using (menu_id)) left outer join menu using (menu_id))
+        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_menu.extra_charge
+              from (ordered_menu  left outer join menu using (menu_id))
                        left outer join additional_option using (option_id)
               where ordered_menu.order_id = ?) as temp) + orders.delivery_price - orders.delivery_discount),'원') as actual_price,
        orders.payment_type,users.phone,concat(users.region, ' ', users.address) as user_location ,request
@@ -691,13 +757,12 @@ where orders.order_id = ?;";
 
     return $res[0];
 }
-// 8.2. 주문한 메뉴 보기
 function getOrderedMenu($order_id)
 {
     $pdo = pdoSqlConnect();
-    $query="select ordered_menu.order_id, menu_name, quantity, ordered_menu.price, option_name, ordered_option.extra_charge
-from ((ordered_menu left outer join ordered_option using (menu_id)) left outer join menu using (menu_id))  left outer join additional_option using (option_id)
-where ordered_menu.order_id=?;";
+    $query="select ordered_menu.order_id, menu_name, quantity, ordered_menu.price, option_name, ordered_menu.extra_charge
+from (ordered_menu left outer join menu using (menu_id))  left outer join additional_option using (option_id)
+where ordered_menu.order_id='200613-20-144783';";
     $st = $pdo->prepare($query);
     $st->execute([$order_id]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
@@ -709,7 +774,22 @@ where ordered_menu.order_id=?;";
     return $res;
 }
 
-// 9.1. 주문표 비었는지 확인
+// 12~14. 주문표
+function getOrderPad()
+{
+    $pdo = pdoSqlConnect();
+    $query = "select * from order_pad;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
 function isOrderPadEmpty(){
     $pdo = pdoSqlConnect();
     $query = "SELECT NOT EXISTS (select * FROM order_pad) as exist;";
@@ -724,7 +804,6 @@ function isOrderPadEmpty(){
 
     return intval($res[0]['exist']);
 }
-// 9.2. 최근 추가한 메뉴의 restaurant_id 조회
 function getCurrentRestaurantID()
 {
     $pdo = pdoSqlConnect();
@@ -741,18 +820,6 @@ from order_pad limit 1;";
 
     return intval($res[0]['restaurant_id']);
 }
-// 9.3. 주문표 전체 삭제 (식당 변경 위해서)
-function deleteAllItems()
-{
-    $pdo = pdoSqlConnect();
-    $query="truncate order_pad;";
-    $st = $pdo->prepare($query);
-    $st->execute();
-
-    $st = null;
-    $pdo = null;
-}
-// 9.4. 메뉴가 이미 추가되었는가?
 function isItemExistInTheOrderPad($menu_id, $option_id){
     $pdo = pdoSqlConnect();
     $query = "SELECT EXISTS (select * FROM order_pad WHERE menu_id = ? and option_id=?) as exist;";
@@ -767,7 +834,6 @@ function isItemExistInTheOrderPad($menu_id, $option_id){
 
     return intval($res[0]['exist']);
 }
-// 9.5. 주문표에 메뉴 추가
 function addItemIntoOrderPad($rest_id, $menu_id, $option_id, $quantity)
 {
     $pdo = pdoSqlConnect();
@@ -778,80 +844,56 @@ function addItemIntoOrderPad($rest_id, $menu_id, $option_id, $quantity)
     $st = null;
     $pdo = null;
 }
-
-// 10. 주문표에서 메뉴 삭제
-function deleteItemAtOrderPad($menu_id, $option_id)
+function deleteItemAtOrderPad($order_pad_id)
 {
     $pdo = pdoSqlConnect();
     $query="delete from order_pad
-where menu_id = ? and option_id=?;";
+where order_pad_id= ?;";
     $st = $pdo->prepare($query);
-    $st->execute([$menu_id, $option_id]);
+    $st->execute([$order_pad_id]);
 
     $st = null;
     $pdo = null;
 }
-
-// 11. 주문표 가져오기
-function getOrderPad()
+function deleteAllItems()
 {
     $pdo = pdoSqlConnect();
-    $query = "select * from order_pad;";
-
+    $query="truncate order_pad;";
     $st = $pdo->prepare($query);
     $st->execute();
-    $st->setFetchMode(PDO::FETCH_ASSOC);
-    $res = $st->fetchAll();
 
     $st = null;
     $pdo = null;
-
-    return $res;
 }
 
-// 12.1. 주문내역 추가
-function addOrders($order_id, $rest_id, $payment_type, $request, $order_type)
+
+// 15. 주문하기
+function addOrders($order_id, $rest_id, $payment_type, $request, $order_type, $user_location)
 {
     $pdo = pdoSqlConnect();
     $delivery_price =getDeliveryPrice($rest_id);
     $delivery_discount=getDeliveryDiscount($rest_id);
-    $query="insert into orders (order_id, restaurant_id, user_id, payment_type, request, order_type, delivery_price, delivery_discount)
-values (?,?,'10000001',?,?,?,?,?);";
+    $query="insert into orders (order_id, restaurant_id, user_id, payment_type, request, order_type, delivery_price, delivery_discount, user_location)
+values (?,?,'10000001',?,?,?,?,?,?);";
     $st = $pdo->prepare($query);
-    $st->execute([$order_id, $rest_id, $payment_type, $request, $order_type, $delivery_price, $delivery_discount]);
+    $st->execute([$order_id, $rest_id, $payment_type, $request, $order_type, $delivery_price, $delivery_discount, $user_location]);
 
     $st = null;
     $pdo = null;
 }
-// 12.2. 주문한 메뉴 추가
-function addOrderedMenu($order_id, $menu_id, $quantity)
+function addOrderedMenu($order_id, $menu_id, $quantity, $option_id)
 {
     $pdo = pdoSqlConnect();
     $price = getMenuPrice($menu_id);
-
-
-    $query="insert into ordered_menu values (?,?,?,?);";
-    $st = $pdo->prepare($query);
-    $st->execute([$order_id, $menu_id, $quantity, $price]);
-
-    $st = null;
-    $pdo = null;
-}
-// 12.3. 주문한 옵션 추가
-function addOrderedOption($order_id, $menu_id, $option_id)
-{
-    $pdo = pdoSqlConnect();
     $extra_charge = getOptionPrice($option_id);
 
-
-    $query="insert into ordered_option values (?,?,?,?);";
+    $query="insert into ordered_menu values (?,?,?,?,?,?);";
     $st = $pdo->prepare($query);
-    $st->execute([$order_id, $menu_id, $option_id, $extra_charge]);
+    $st->execute([$order_id, $menu_id, $quantity, $price, $option_id, $extra_charge]);
 
     $st = null;
     $pdo = null;
 }
-// 12.4. 배달 요금 조회
 function getDeliveryPrice($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -867,7 +909,6 @@ function getDeliveryPrice($rest_id)
 
     return intval($res[0]['delivery_price']);
 }
-// 12.5. 배달 할인 조회
 function getDeliveryDiscount($rest_id)
 {
     $pdo = pdoSqlConnect();
@@ -883,7 +924,6 @@ function getDeliveryDiscount($rest_id)
 
     return intval($res[0]['delivery_discount']);
 }
-// 12.6. 메뉴 가격 조회
 function getMenuPrice($menu_id)
 {
     $pdo = pdoSqlConnect();
@@ -899,9 +939,10 @@ function getMenuPrice($menu_id)
 
     return intval($res[0]['price']);
 }
-// 12.7. 옵션 가격 조회
 function getOptionPrice($option_id)
 {
+    if($option_id == 0)
+        return 0;
     $pdo = pdoSqlConnect();
     $query = "select extra_charge from additional_option where option_id=?;";
 
@@ -916,7 +957,41 @@ function getOptionPrice($option_id)
     return intval($res[0]['extra_charge']);
 }
 
-// 13. 마이요기요
+// 16. 재주문
+function getUserLocation(){
+    $pdo = pdoSqlConnect();
+    $query = "select region, address
+    from users
+    where user_id=10000001;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res[0];
+}
+function getOrderedMenuForReorder($order_id){
+    $pdo = pdoSqlConnect();
+    $query = "select restaurant_id, menu_id, option_id, quantity
+from ordered_menu join orders using (order_id)
+where order_id = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$order_id]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+
+// 17. 마이요기요
 function getMyYogiyo()
 {
     $pdo = pdoSqlConnect();
@@ -937,7 +1012,7 @@ where user_id=10000001;";
     return $res[0];
 }
 
-// 14. 사용자 정보
+// 18. 사용자 정보
 function getUserInfo()
 {
     $pdo = pdoSqlConnect();
@@ -956,7 +1031,7 @@ where user_id=10000001;";
     return $res[0];
 }
 
-// 15. 등록한 카드
+// 19. 등록한 카드
 function getCardInfo()
 {
     $pdo = pdoSqlConnect();
@@ -975,7 +1050,7 @@ where user_id=10000001 and is_deleted = 0;";
     return $res;
 }
 
-// 16.1. 카드 존재하는지 확인
+// 20~21. 카드 추가 / 삭제
 function isCardExist($card_number)
 {
     $pdo = pdoSqlConnect();
@@ -991,7 +1066,6 @@ function isCardExist($card_number)
 
     return intval($res[0]['exist']);
 }
-// 16.2. 카드 삭제됐는지 확인
 function isCardDeleted($card_number)
 {
     $pdo = pdoSqlConnect();
@@ -1008,7 +1082,6 @@ where user_id='10000001' and card_number=?;";
 
     return intval($res[0]['is_deleted']);
 }
-// 16.3. 카드 새로 추가하기
 function addCard($card_type, $card_number, $expiration_date, $cvc, $password, $resident_registration_number)
 {
     $pdo = pdoSqlConnect();
@@ -1019,7 +1092,6 @@ function addCard($card_type, $card_number, $expiration_date, $cvc, $password, $r
     $st = null;
     $pdo = null;
 }
-// 16.4. 카드 상태 변경 (비활성화 -> 활성화)
 function updateCardToActive($card_number)
 {
     $pdo = pdoSqlConnect();
@@ -1033,8 +1105,6 @@ function updateCardToActive($card_number)
     $st = null;
     $pdo = null;
 }
-
-// 17. 카드 삭제(활성화 -> 비활성화)
 function updateCardToUnactive($card_number)
 {
     $pdo = pdoSqlConnect();
@@ -1049,7 +1119,7 @@ function updateCardToUnactive($card_number)
     $pdo = null;
 }
 
-// 18.1. 현재 결제 비밀번호 조회
+// 22. 결제 비밀번호 변경
 function getPaymentPassword()
 {
     $pdo = pdoSqlConnect();
@@ -1067,7 +1137,6 @@ function getPaymentPassword()
 
     return intval($res[0]['payment_password']);
 }
-// 18.2. 결제 비밀번호 변경
 function updatePaymentPassword($payment_password)
 {
     $pdo = pdoSqlConnect();
@@ -1081,7 +1150,7 @@ function updatePaymentPassword($payment_password)
 
 }
 
-// 19. 휴대전화번호 변경
+// 23. 휴대전화번호 변경
 function updatePhone($phone)
 {
     $pdo = pdoSqlConnect();
@@ -1095,7 +1164,7 @@ function updatePhone($phone)
 
 }
 
-// 20. 닉네임 변경
+// 24. 닉네임 변경
 function updateNickname($nickname)
 {
     $pdo = pdoSqlConnect();
@@ -1109,21 +1178,7 @@ function updateNickname($nickname)
 
 }
 
-// 21. 회원탈퇴
-function deleteUser()
-{
-    $pdo = pdoSqlConnect();
-    $query = "update users set is_deleted = 1 where user_id=10000001;";
-
-    $st = $pdo->prepare($query);
-    $st->execute();
-
-    $st = null;
-    $pdo = null;
-
-}
-
-// 22. 배달 주소 변경
+// 25. 배달 주소 변경
 function updateLocation($region, $address)
 {
     $pdo = pdoSqlConnect();
@@ -1135,12 +1190,74 @@ function updateLocation($region, $address)
     $st = $pdo->prepare($query);
     $st->execute([$address]);
 
+    if(!isRecentLocationExist($region, $address)){
+        $query = "insert into recent_user_location (user_id, region, address) values (10000001, ?, ?);";
+        $st = $pdo->prepare($query);
+        $st->execute([$region, $address]);
+    }
+
     $st = null;
     $pdo = null;
 
 }
 
-// 23. 회원가입
+// 26~27. 최근 배달위치 조회 / 삭제
+function isRecentLocationExist($region, $address){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM recent_user_location WHERE region = ? and address=?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$region, $address]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+function getRecentLocation(){
+    $pdo = pdoSqlConnect();
+    $query = "select concat(region, ' ', address) as location
+from recent_user_location
+where user_id = 10000001
+order by created_at;";
+
+    $st = $pdo->prepare($query);
+    $st->execute();
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+    return $res;
+}
+function deleteRecentLocation($idx){
+    $pdo = pdoSqlConnect();
+    $query = "delete from recent_user_location where idx = ?;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$idx]);
+
+    $st = null;
+    $pdo = null;
+}
+function isLocationIdxExist($idx){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM recent_user_location WHERE idx = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$idx]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+
+// 28~29. 회원가입 / 탈퇴
 function addUser($nickname, $email, $password, $phone, $region, $address, $payment_password)
 {
     $pdo = pdoSqlConnect();
@@ -1153,8 +1270,20 @@ function addUser($nickname, $email, $password, $phone, $region, $address, $payme
     $pdo = null;
 
 }
+function deleteUser($user_id)
+{
+    $pdo = pdoSqlConnect();
+    $query = "update users set is_deleted = 1 where user_id=?;";
 
-// 24.1. 리뷰 이미 작성했는가?
+    $st = $pdo->prepare($query);
+    $st->execute([$user_id]);
+
+    $st = null;
+    $pdo = null;
+
+}
+
+// 30. 리뷰 작성
 function isReviewExist($order_id)
 {
     $pdo = pdoSqlConnect();
@@ -1171,8 +1300,7 @@ function isReviewExist($order_id)
     return intval($res[0]['exist']);
 
 }
-// 24.2. 리뷰 작성하기
-function addReview($order_id, $contents, $taste_score, $quantity_score, $delivery_score, $image)
+function addReview($order_id, $contents, $taste_score, $quantity_score, $delivery_score)
 {
     $pdo = pdoSqlConnect();
     $query = "insert into review (order_id, contents, taste_score, quantity_score, delivery_score) values (?,?,?,?,?);";
@@ -1181,11 +1309,44 @@ function addReview($order_id, $contents, $taste_score, $quantity_score, $deliver
 
     $st = null;
     $pdo = null;
+}
+function getReviewId($order_id)
+{
+    $pdo = pdoSqlConnect();
+    $query = "select review_id from review where order_id = ?";
+    $st = $pdo->prepare($query);
+    $st->execute([$order_id]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
 
+    $st = null;
+    $pdo = null;
+    return $res[0]['review_id'];
+}
+function addReviewImage($review_id, $image_url)
+{
+    $pdo = pdoSqlConnect();
+    $query = "insert into review_image values (?,?);";
+    $st = $pdo->prepare($query);
+    $st->execute([$review_id, $image_url]);
+
+    $st = null;
+    $pdo = null;
 }
 
+// 31. 리뷰 삭제
+function deleteReview($review_id){
+    $pdo = pdoSqlConnect();
+    $query = "delete from review where review_id = ?;";
 
-// 25.1. 리뷰 이미 추천했는가?
+    $st = $pdo->prepare($query);
+    $st->execute([$review_id]);
+
+    $st = null;
+    $pdo = null;
+}
+
+// 32. 리뷰 추천 / 취소
 function isReviewLikeExist($review_id)
 {
     $pdo = pdoSqlConnect();
@@ -1201,7 +1362,6 @@ function isReviewLikeExist($review_id)
 
     return intval($res[0]['exist']);
 }
-// 25.2. 리뷰 추천하기
 function addReviewLike($review_id)
 {
     $pdo = pdoSqlConnect();
@@ -1212,7 +1372,6 @@ function addReviewLike($review_id)
     $st = null;
     $pdo = null;
 }
-// 25.3. 리뷰 추천 상태 조회
 function getReviewLikeStatus($review_id)
 {
     $pdo = pdoSqlConnect();
@@ -1229,7 +1388,6 @@ where user_id='10000001' and review_id=?;";
 
     return intval($res[0]['status']);
 }
-// 25.4. 리뷰 추천하기 (비활성화 -> 활성화)
 function updateReviewLikeToTrue($review_id)
 {
     $pdo = pdoSqlConnect();
@@ -1244,7 +1402,6 @@ function updateReviewLikeToTrue($review_id)
     $st = null;
     $pdo = null;
 }
-// 25.2. 리뷰 추천 취소하기 (활성화 -> 비활성화)
 function updateReviewLikeToFalse($review_id)
 {
     $pdo = pdoSqlConnect();
@@ -1260,14 +1417,39 @@ function updateReviewLikeToFalse($review_id)
     $pdo = null;
 }
 
-
-// check validation
-function isValidUser(){
+// 33. 리뷰 신고
+function reportReview($review_id){
     $pdo = pdoSqlConnect();
-    $query = "SELECT EXISTS (select * FROM users WHERE user_id = 10000001) as exist;";
+    $query = "insert into review_report (user_id, review_id) values (10000001, ?);";
 
     $st = $pdo->prepare($query);
-    $st->execute();
+    $st->execute([$review_id]);
+
+    $st = null;
+    $pdo = null;
+}
+function isReviewAlreadyReport($review_id){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM review_report WHERE user_id = 10000001 and review_id=?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$review_id]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+
+// ******** check validation ********
+function isValidUser($user_id){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM users WHERE user_id = ? and is_deleted = 0) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$user_id]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
@@ -1291,13 +1473,13 @@ function isValidRestaurant($rest_id)
 
     return intval($res[0]['exist']);
 }       // 202
-function isValidMenu($menu_id)
+function isValidMenu($menu_id, $rest_id)
 {
     $pdo = pdoSqlConnect();
-    $query = "SELECT EXISTS (select * FROM menu WHERE menu_id = ?) as exist;";
+    $query = "SELECT EXISTS (select * FROM menu WHERE menu_id = ? and restaurant_id = ?) as exist;";
 
     $st = $pdo->prepare($query);
-    $st->execute([$menu_id]);
+    $st->execute([$menu_id, $rest_id]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
@@ -1306,13 +1488,13 @@ function isValidMenu($menu_id)
 
     return intval($res[0]['exist']);
 }             // 203
-function isValidOption($option_id)
+function isValidOption($option_id, $menu_id)
 {
     $pdo = pdoSqlConnect();
-    $query = "SELECT EXISTS (select * FROM additional_option WHERE option_id = ?) as exist;";
+    $query = "SELECT EXISTS (select * FROM additional_option WHERE option_id = ? and menu_id = ?) as exist;";
 
     $st = $pdo->prepare($query);
-    $st->execute([$option_id]);
+    $st->execute([$option_id, $menu_id]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
@@ -1366,6 +1548,62 @@ function isValidCategory($category)
 
     return intval($res[0]['exist']);
 }        // 207
+function isValidOrderPadId($order_pad_id){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM order_pad WHERE order_pad_id = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$order_pad_id]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}                     // 208
+function isPhoneExist($phone){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM users WHERE phone = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$phone]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+function isEmailExist($email){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM users WHERE email = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$email]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
+function isNicknameExist($nickname){
+    $pdo = pdoSqlConnect();
+    $query = "SELECT EXISTS (select * FROM users WHERE nickname = ?) as exist;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$nickname]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return intval($res[0]['exist']);
+}
 // CREATE
 //    function addMaintenance($message){
 //        $pdo = pdoSqlConnect();

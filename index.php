@@ -15,76 +15,127 @@ ini_set('default_charset', 'utf8mb4');
 error_reporting(E_ALL); ini_set("display_errors", 1);
 
 //Main Server API
-// 어떤 API가 어디에 가서 어떤 로직을 수행할 지
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
-    /* ******************   Test   ****************** */
-    // addRoute('111', '/222', ['333', '444']);
-    // 111 method로 /222 경로의 333.php파일로 가서 444 함수 실행
-//    $r->addRoute('GET', '/', ['IndexController', 'index']);
-//    $r->addRoute('GET', '/users', ['IndexController', 'getUsers']);
-//    $r->addRoute('GET', '/users/{no}', ['IndexController', 'getUserDetail']);3
-//    $r->addRoute('POST', '/user', ['IndexController', 'createUser']);
-//    $r->addRoute('GET', '/jwt', ['MainController', 'validateJwt']);
-//    $r->addRoute('POST', '/jwt', ['MainController', 'createJwt']);
+
+    // 7. 최근 검색어 전체 삭제
+    $r->addRoute('DELETE', '/keyword/all', ['IndexController', 'deleteAllRecentSearchKeyword']);
+
+    // 1. 찜한 음식점 조회
+    $r->addRoute('GET', '/favorite', ['IndexController', 'getFavorite']);
+
+    // 2. 찜 하기 / 취소하기
+    $r->addRoute('PATCH', '/favorite/{rest_id}', ['IndexController', 'addFavorite']);
+
+    // 3. 카테고리별 음식점 조회
+    $r->addRoute('GET', '/search/restaurant', ['IndexController', 'getRestaurantByCategory']);
+
+    // 4. 메뉴 검색
+    $r->addRoute('GET', '/search/menu', ['IndexController', 'findMenu']);
+
+    // 5. 최근 검색어 조회
+    $r->addRoute('GET', '/keyword', ['IndexController', 'getRecentSearchKeyword']);
+
+    // 6. 최근 검색어 삭제
+    $r->addRoute('DELETE', '/keyword/{idx}', ['IndexController', 'deleteRecentSearchKeyword']);
 
 
 
+    // 8.1 특정 음식점 메인 조회
+    $r->addRoute('GET', '/restaurant/{rest_id}/main', ['IndexController', 'getRestaurantMain']);
 
-    // 1. 찜한 음식점
-    // ex) indabaesori.shop/restaurant/favorite?user_id=10000001
-    $r->addRoute('GET', '/restaurant/favorite', ['IndexController', 'getFavorite']);
+    // 8.2 특정 음식점 메뉴 조회
+    $r->addRoute('GET', '/restaurant/{rest_id}/menu', ['IndexController', 'getRestaurantMenu']);
 
-    // 2.1. 전체 음식점
-    // ex) indabaesori.shop/restaurant/all?user_id=10000001
-    $r->addRoute('GET', '/restaurant/all', ['IndexController', 'getAllRestaurant']);
+    // 8.3 특정 음식점 리뷰 조회
+    $r->addRoute('GET', '/restaurant/{rest_id}/review', ['IndexController', 'getRestaurantReview']);
 
-    // 2.2. 1인분 가능 음식점
-    $r->addRoute('GET', '/restaurant/portion', ['IndexController', 'getPortionRestaurant']);
+    // 8.4 특정 음식점 정보 조회
+    $r->addRoute('GET', '/restaurant/{rest_id}/info', ['IndexController', 'getRestaurantInfo']);
 
-    // 2.3. 야식 가능 음식점
-    $r->addRoute('GET', '/restaurant/night', ['IndexController', 'getNightRestaurant']);
+    // 9. 메뉴 추가 옵션 조회
+    $r->addRoute('GET', '/restaurant/{rest_id}/menu/{menu_id}', ['IndexController', 'getMenuOption']);
 
-    // 2.4. 프랜차이즈 음식점
-    $r->addRoute('GET', '/restaurant/franchise', ['IndexController', 'getFranchiseRestaurant']);
+    // 10.1 터치주문내역 조회
+    $r->addRoute('GET', '/order/touch', ['IndexController', 'getTouchOrderList']);
 
-    // 2.5. 카테고리별 음식점
-    // ex) indabaesori.shop/restaurant?category=치킨&user_id=10000001
-    $r->addRoute('GET', '/restaurant', ['IndexController', 'getRestaurantByCategory']);
+    // 10.2 전화주문내역 조회
+    $r->addRoute('GET', '/order/call', ['IndexController', 'getCallOrderList']);
 
-    // 3. 음식점 정보 (식당 정보, 메뉴(인기메뉴, 카테고리별), 리뷰)
-    // ex) indabaesori.shop/restaurant/20000001
-    $r->addRoute('GET', '/restaurant/{rest_id}', ['IndexController', 'getRestaurantDetail']);
-
-    // 4. 메뉴 추가 옵션 선택
-    // ex) indabaesori.shop/menu/30000001
-    $r->addRoute('GET', '/menu/{menu_id}', ['IndexController', 'getMenuOption']);
-
-    // 5. 주문내역
-    // ex) indabaesori.shop/order?user_id=10000001
-    $r->addRoute('GET', '/order', ['IndexController', 'getOrderList']);
-
-    // 6. 주문 상세 보기
-    // ex) indabaesori.shop/order/200613-20-144783
+    // 11. 주문 상세 보기
     $r->addRoute('GET', '/order/{order_id}', ['IndexController', 'getOrderDetail']);
 
-    // 7. 마이요기요
-    // ex) indabaesori.shop/my-yogiyo?user_id=10000001
+    // 12. 주문표에 메뉴 추가
+    $r->addRoute('POST', '/order-pad', ['IndexController', 'addItemIntoOrderPad']);
+
+    // 13. 주문표에 메뉴 삭제
+    $r->addRoute('DELETE', '/order-pad/{order_pad_id}', ['IndexController', 'deleteItemAtOrderPad']);
+
+    // 14. 주문표 조회
+    $r->addRoute('GET', '/order-pad', ['IndexController', 'getOrderPad']);
+
+    // 15. 주문하기
+    $r->addRoute('POST', '/order', ['IndexController', 'addOrders']);
+
+    // 16. 재주문하기 (주문표에 추가)
+    $r->addRoute('POST', '/re-order/{order_id}', ['IndexController', 'reOrder']);
+
+    // 17. 마이요기요
     $r->addRoute('GET', '/my-yogiyo', ['IndexController', 'getMyYogiyo']);
 
-    // 8. 사용자 정보
-    // ex) indabaesori.shop/my-yogiyo/user-info?user_id=10000001
-    $r->addRoute('GET', '/my-yogiyo/user-info', ['IndexController', 'getUserInfo']);
+    // 18. 사용자 정보
+    $r->addRoute('GET', '/user-info', ['IndexController', 'getUserInfo']);
 
-    // 9. 등록한 카드
-    // ex) indabaesori.shop/my-yogiyo/card?user_id=10000001
-    $r->addRoute('GET', '/my-yogiyo/card', ['IndexController', 'getCardInfo']);
+    // 19. 등록한 카드
+    $r->addRoute('GET', '/card', ['IndexController', 'getCardInfo']);
 
-    // 10. 메뉴 검색
-    // ex) indabaesori.shop/search?keyword=치킨
-    $r->addRoute('GET', '/search', ['IndexController', 'findMenu']);
+    // 20. 카드 추가
+    $r->addRoute('POST', '/card', ['IndexController', 'addCard']);
 
-    // 11. 회원가입
-    $r->addRoute('POST', '/sign-up', ['IndexController', 'addUser']);
+    // 21. 카드 삭제
+    $r->addRoute('DELETE', '/card/{card_number}', ['IndexController', 'deleteCard']);
+
+    // 22. 결제 비밀번호 변경
+    $r->addRoute('PATCH', '/user-info/payment-password', ['IndexController', 'updatePaymentPassword']);
+
+    // 23. 휴대전화 번호 변경
+    $r->addRoute('PATCH', '/user-info/phone', ['IndexController', 'updatePhone']);
+
+    // 24. 닉네임 변경
+    $r->addRoute('PATCH', '/user-info/nickname', ['IndexController', 'updateNickname']);
+
+    // 25. 배달 주소 변경
+    $r->addRoute('PATCH', '/location', ['IndexController', 'updateLocation']);
+
+    // 26. 최근 배달위치 조회
+    $r->addRoute('GET', '/delivery-location', ['IndexController', 'getRecentLocation']);
+
+    // 27. 최근 배달위치 삭제
+    $r->addRoute('DELETE', '/delivery-location/{idx}', ['IndexController', 'deleteRecentLocation']);
+
+    // 28. 회원가입
+    $r->addRoute('POST', '/user-info', ['IndexController', 'addUser']);
+
+    // 29. 회원탈퇴
+    $r->addRoute('DELETE', '/user-info/{user_id}', ['IndexController', 'deleteUser']);
+
+    // 30. 리뷰 작성하기
+    $r->addRoute('POST', '/review', ['IndexController', 'addReview']);
+
+    // 31. 리뷰 삭제
+    $r->addRoute('DELETE', '/review/{review_id}', ['IndexController', 'deleteReview']);
+
+    // 32. 리뷰 추천 / 취소하기
+    $r->addRoute('PATCH', '/review-like/{review_id}', ['IndexController', 'addReviewLike']);
+
+    // 33. 리뷰 신고
+    $r->addRoute('POST', '/review/{review_id}', ['IndexController', 'reportReview']);
+
+
+
+
+
+
+
 //    $r->addRoute('GET', '/users', 'get_all_users_handler');
 //    // {id} must be a number (\d+)
 //    $r->addRoute('GET', '/user/{id:\d+}', 'get_user_handler');
