@@ -17,6 +17,12 @@ error_reporting(E_ALL); ini_set("display_errors", 1);
 //Main Server API
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
 
+    $r->addRoute('GET', '/jwt', ['MainController', 'validateJwt']);
+    $r->addRoute('POST', '/jwt', ['MainController', 'createJwt']);
+
+    // JWT TEST
+    $r->addRoute('GET', '/test', ['MainController', 'testJWT']);
+
     // 7. 최근 검색어 전체 삭제
     $r->addRoute('DELETE', '/keyword/all', ['IndexController', 'deleteAllRecentSearchKeyword']);
 
@@ -116,7 +122,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     $r->addRoute('POST', '/user-info', ['IndexController', 'addUser']);
 
     // 29. 회원탈퇴
-    $r->addRoute('DELETE', '/user-info/{user_id}', ['IndexController', 'deleteUser']);
+    $r->addRoute('DELETE', '/user-info', ['IndexController', 'deleteUser']);
 
     // 30. 리뷰 작성하기
     $r->addRoute('POST', '/review', ['IndexController', 'addReview']);

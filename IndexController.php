@@ -2,7 +2,7 @@
 
 require 'function.php';
 
-const JWT_SECRET_KEY = "TEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEYTEST_KEY";
+const JWT_SECRET_KEY = "";
 
 $res = (Object)Array();
 header('Content-Type: json');
@@ -25,28 +25,54 @@ try {
             break;
 
         /*
-         * API No. 1
-         * API Name : 찜한 음식점 조회 API
-         * 마지막 수정 날짜 : 20.08.18
-         */
+        * API No. 1
+        * API Name : 찜한 음식점 조회 API
+        * 마지막 수정 날짜 : 20.08.18
+        */
         case "getFavorite":
             http_response_code(200);
-            $res->count = getFavoriteCount();
-            $res->restaurant = getFavoriteRestaurant();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->count = getFavoriteCount($user_id);
+            $res->restaurant = getFavoriteRestaurant($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
-
         /*
          * API No. 2
          * API Name : 찜 하기 / 취소하기 API
          * 마지막 수정 날짜 : 20.08.20
          */
         case "addFavorite":
-            $rest_id = $vars['rest_id'];
             http_response_code(200);
+            $rest_id = $vars['rest_id'];
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 202;
@@ -55,19 +81,19 @@ try {
                 break;
             }
 
-            if(!isFavoriteExist($rest_id)){
-                addFavorite($rest_id); // body(request) 안에 있는 name 받아오기
+            if(!isFavoriteExist($user_id,$rest_id)){
+                addFavorite($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
                 $res->message = "찜 목록에 추가되었습니다.";
                 $res->code = 101;
             }
             else{
-                if(getFavoriteStatus($rest_id)==false){
-                    updateFavoriteToTrue($rest_id); // body(request) 안에 있는 name 받아오기
+                if(getFavoriteStatus($user_id,$rest_id)==false){
+                    updateFavoriteToTrue($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
                     $res->message = "찜 목록에 추가되었습니다.";
                     $res->code = 101;
                 }
                 else{
-                    updateFavoriteToFalse($rest_id); // body(request) 안에 있는 name 받아오기
+                    updateFavoriteToFalse($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
                     $res->message = "찜 목록에서 삭제되었습니다.";
                     $res->code = 102;
                 }
@@ -83,6 +109,19 @@ try {
          */
         case "getRestaurantByCategory":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
             $category = $_GET['category'];
             if(!isValidCategory($category)){
                 $res->isSuccess = FALSE;
@@ -91,9 +130,10 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->our_village_plus = getOurVillagePlusByCategory($category);
-            $res->super_red_week = getSuperRedWeekPlusByCategory($category);
-            $res->normal_restaurant = getNormalRestaurantByCategory($category);
+            //$res->test = restaurantTest($category, $user_id);
+            $res->our_village_plus = getOurVillagePlusByCategory($category,$user_id);
+            $res->super_red_week = getSuperRedWeekPlusByCategory($category,$user_id);
+            $res->normal_restaurant = getNormalRestaurantByCategory($category,$user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -107,8 +147,28 @@ try {
          */
         case "findMenu":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
             $keyword = $_GET['keyword'];
-            $res->result = findMenu($keyword);
+            if(!isKeywordExist($user_id,$keyword)){
+                addRecentSearchKeyword($user_id,$keyword);
+            }
+            else{
+                updateKeywordSearchTime($user_id, $keyword);
+            }
+
+            $res->result = findMenu($keyword, $user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -122,7 +182,21 @@ try {
          */
         case "getRecentSearchKeyword":
             http_response_code(200);
-            $res->result = getRecentSearchKeyword();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getRecentSearchKeyword($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "최근 검색어 조회 성공";
@@ -136,8 +210,22 @@ try {
          */
         case "deleteRecentSearchKeyword":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $idx = $vars['idx'];
-            if(!isKeywordIdxExist($idx)){
+            if(!isKeywordIdxExist($user_id,$idx)){
                 $res->isSuccess = FALSE;
                 $res->code = 208;
                 $res->message = "존재하지 않는 인덱스입니다.";
@@ -158,7 +246,21 @@ try {
          */
         case "deleteAllRecentSearchKeyword":
             http_response_code(200);
-            deleteAllRecentSearchKeyword();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            deleteAllRecentSearchKeyword($user_id);
             $res->isSuccess = TRUE;
             $res->code = 102;
             $res->message = "최근 검색어 전체 삭제 성공";
@@ -172,6 +274,20 @@ try {
          */
         case "getRestaurantMain":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -194,6 +310,20 @@ try {
          */
         case "getRestaurantMenu":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -218,6 +348,20 @@ try {
          */
         case "getRestaurantReview":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -240,6 +384,20 @@ try {
          */
         case "getRestaurantInfo":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -262,6 +420,20 @@ try {
          */
         case "getMenuOption":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $rest_id = $vars['rest_id'];
             $menu_id = $vars['menu_id'];
             if(!isValidMenu($menu_id, $rest_id)){
@@ -285,8 +457,22 @@ try {
          */
         case "getTouchOrderList":
             http_response_code(200);
-            $res->touch_order_count = getTouchOrderCount();
-            $res->touch_order_list = getTouchOrderList();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->touch_order_count = getTouchOrderCount($user_id);
+            $res->touch_order_list = getTouchOrderList($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -300,8 +486,22 @@ try {
          */
         case "getCallOrderList":
             http_response_code(200);
-            $res->call_order_count = getCallOrderCount();
-            $res->call_order_list = getCallOrderList();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->call_order_count = getCallOrderCount($user_id);
+            $res->call_order_list = getCallOrderList($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -315,6 +515,20 @@ try {
          */
         case "getOrderDetail":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $order_id = $vars['order_id'];
             if(!isValidOrder($order_id)){
                 $res->isSuccess = FALSE;
@@ -338,6 +552,20 @@ try {
          */
         case "addItemIntoOrderPad":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if($req->rest_id == null || $req->menu_id == null  || $req->quantity == null){
                 $res->isSuccess = FALSE;
                 $res->code = 202;
@@ -368,14 +596,14 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(!isOrderPadEmpty()){
-                if($req->rest_id != getCurrentRestaurantID()){
-                    deleteAllItems();
+            if(!isOrderPadEmpty($user_id)){
+                if($req->rest_id != getCurrentRestaurantID($user_id)){
+                    deleteAllItems($user_id);
                     $res->message =  "이전에 존재하던 주문표가 모두 삭제되었습니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                 }
                 else{
-                    if(isItemExistInTheOrderPad($req->menu_id, $req->option_id)){
+                    if(isItemExistInTheOrderPad($user_id, $req->menu_id, $req->option_id)){
                         $res->isSuccess = FALSE;
                         $res->code = 210;
                         $res->message = "이미 추가된 메뉴입니다.";
@@ -385,7 +613,7 @@ try {
                 }
             }
 
-            addItemIntoOrderPad($req->rest_id, $req->menu_id, $req->option_id, $req->quantity);
+            addItemIntoOrderPad($req->rest_id, $user_id, $req->menu_id, $req->option_id, $req->quantity);
             $res->isSuccess = TRUE;
             $res->code = 101;
             $res->message = "메뉴가 추가됐습니다.";
@@ -399,6 +627,20 @@ try {
          */
         case "deleteItemAtOrderPad":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $order_pad_id = $vars['order_pad_id'];
             if(!isValidOrderPadId($order_pad_id)){
                 $res->isSuccess = FALSE;
@@ -407,7 +649,7 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            deleteItemAtOrderPad($order_pad_id); // body(request) 안에 있는 name 받아오기
+            deleteItemAtOrderPad($order_pad_id, $user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 102;
             $res->message = "메뉴가 삭제됐습니다.";
@@ -421,7 +663,21 @@ try {
          */
         case "getOrderPad":
             http_response_code(200);
-            $res->result = getOrderPad();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getOrderPad($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공.";
@@ -434,6 +690,20 @@ try {
         */
         case "addOrders":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if($req->order_id==null || $req->rest_id == null || $req->payment_type == null ||
                 $req->order_type == null || $req->menu_id == null || $req->quantity == null){
                 $res->isSuccess = FALSE;
@@ -476,17 +746,17 @@ try {
             else
                 $request = $req->request;
 
-            $user_region_address = getUserLocation();
+            $user_region_address = getUserLocation($user_id);
             $user_location = $user_region_address['region'].' '.$user_region_address['address'];
 
-            addOrders($req->order_id, $req->rest_id, $req->payment_type, $request, $req->order_type, $user_location);
+            addOrders($req->order_id, $req->rest_id, $user_id, $req->payment_type, $request, $req->order_type, $user_location);
 
-            $order_pad_list = getOrderPad();
+            $order_pad_list = getOrderPad($user_id);
             $order_pad_list_count = count($order_pad_list);
             for($i = 0; $i<$order_pad_list_count; $i++){
                 addOrderedMenu($req->order_id, $order_pad_list[$i]['menu_id'], $order_pad_list[$i]['quantity'], $order_pad_list[$i]['option_id']);
             }
-            deleteAllItems();
+            deleteAllItems($user_id);
 
 
             $res->isSuccess = TRUE;
@@ -502,6 +772,20 @@ try {
          */
         case "reOrder":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $order_id = $vars['order_id'];
             if(!isValidOrder($order_id)){
                 $res->isSuccess = FALSE;
@@ -510,16 +794,16 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $user_region_address = getUserLocation();
+            $user_region_address = getUserLocation($user_id);
             // 1. 배달주소 변경
-            updateLocation($user_region_address['region'], $user_region_address['address']);
+            updateLocation($user_region_address['region'], $user_region_address['address'], $user_id);
 
             // 2. order_id로 주문내역 검색, 주문표에 그대로 추가
-            deleteAllItems();
+            deleteAllItems($user_id);
             $reorder_info = getOrderedMenuForReorder($order_id);
             $reorder_info_count = count($reorder_info);
             for($i = 0; $i<$reorder_info_count; $i++){
-                addItemIntoOrderPad($reorder_info[$i]['restaurant_id'], $reorder_info[$i]['menu_id'], $reorder_info[$i]['option_id'], $reorder_info[$i]['quantity']);
+                addItemIntoOrderPad($reorder_info[$i]['restaurant_id'], $user_id, $reorder_info[$i]['menu_id'], $reorder_info[$i]['option_id'], $reorder_info[$i]['quantity']);
             }
 
             $res->isSuccess = TRUE;
@@ -535,7 +819,21 @@ try {
          */
         case "getMyYogiyo":
             http_response_code(200);
-            $res->result = getMyYogiyo();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getMyYogiyo($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -549,7 +847,22 @@ try {
          */
         case "getUserInfo":
             http_response_code(200);
-            $res->result = getUserInfo();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getUserInfo($user_id);
+
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -563,7 +876,21 @@ try {
          */
         case "getCardInfo":
             http_response_code(200);
-            $res->result = getCardInfo();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getCardInfo($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -577,6 +904,20 @@ try {
          */
         case "addCard":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if(strlen($req->card_number) != 16 || !is_numeric($req->card_number)){
                 $res->isSuccess = FALSE;
                 $res->code = 211;
@@ -598,8 +939,8 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(isCardExist($req->card_number)){
-                if(!isCardDeleted($req->card_number)){
+            if(isCardExist($user_id,$req->card_number)){
+                if(!isCardDeleted($user_id,$req->card_number)){
                     $res->isSuccess = FALSE;
                     $res->code = 210;
                     $res->message = "이미 존재하는 카드입니다.";
@@ -607,11 +948,11 @@ try {
                     break;
                 }
                 else{
-                    updateCardToActive($req->card_number);
+                    updateCardToActive($user_id,$req->card_number);
                 }
             }
             else{
-                addCard($req->card_type, $req->card_number, $req->expiration_date,
+                addCard($user_id, $req->card_type, $req->card_number, $req->expiration_date,
                     $req->cvc, $req->password, $req->resident_registration_number); // body(request) 안에 있는 name 받아오기
             }
 
@@ -628,17 +969,31 @@ try {
          */
         case "deleteCard":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $card_number = $vars{'card_number'};
-            if(!isCardExist($card_number)){
-                    $res->isSuccess = FALSE;
-                    $res->code = 208;
-                    $res->message = "존재하지 않는 카드입니다.";
-                    echo json_encode($res, JSON_NUMERIC_CHECK);
-                    break;
+            if(!isCardExist($user_id, $card_number)){
+                $res->isSuccess = FALSE;
+                $res->code = 208;
+                $res->message = "존재하지 않는 카드입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
             }
 
             else{
-                if(isCardDeleted($card_number)){
+                if(isCardDeleted($user_id, $card_number)){
                     $res->isSuccess = FALSE;
                     $res->code = 211;
                     $res->message = "이미 삭제된 카드입니다.";
@@ -646,7 +1001,7 @@ try {
                     break;
                 }
             }
-            updateCardToUnactive($card_number); // body(request) 안에 있는 name 받아오기
+            updateCardToUnactive($user_id, $card_number); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 102;
             $res->message = "카드 삭제 성공";
@@ -660,7 +1015,21 @@ try {
          */
         case "updatePaymentPassword":
             http_response_code(200);
-            if($req->payment_password != getPaymentPassword()){
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            if($req->payment_password != getPaymentPassword($user_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 301;
                 $res->message = "기존 비밀번호가 일치하지 않습니다.";
@@ -683,7 +1052,7 @@ try {
                 break;
             }
 
-            updatePaymentPassword($req->new_payment_password); // body(request) 안에 있는 name 받아오기
+            updatePaymentPassword($req->new_payment_password,$user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 103;
             $res->message = "비밀번호를 변경했습니다.";
@@ -697,6 +1066,20 @@ try {
          */
         case "updatePhone":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if(!is_numeric($req->phone) || strlen($req->phone) != 11){
                 $res->isSuccess = FALSE;
                 $res->code = 204;
@@ -704,14 +1087,14 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(isPhoneExist($req->phone)){
+            if(isPhoneExist($req->phone, $user_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 205;
                 $res->message = "이미 등록된 전화번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            updatePhone($req->phone); // body(request) 안에 있는 name 받아오기
+            updatePhone($req->phone, $user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 103;
             $res->message = "휴대전화번호를 변경했습니다.";
@@ -725,6 +1108,20 @@ try {
          */
         case "updateNickname":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if(isNicknameExist($req->nickname)){
                 $res->isSuccess = FALSE;
                 $res->code = 205;
@@ -732,7 +1129,7 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            updateNickname($req->nickname); // body(request) 안에 있는 name 받아오기
+            updateNickname($req->nickname, $user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 103;
             $res->message = "닉네임을 변경했습니다.";
@@ -746,8 +1143,22 @@ try {
          */
         case "updateLocation":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
 
-            updateLocation($req->region, $req->address); // body(request) 안에 있는 name 받아오기
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+
+            updateLocation($req->region, $req->address,$user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 103;
             $res->message = "위치 설정이 완료됐습니다.";
@@ -761,7 +1172,21 @@ try {
          */
         case "getRecentLocation":
             http_response_code(200);
-            $res->result = getRecentLocation();
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getRecentLocation($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "최근 배달위치 조회 성공";
@@ -775,6 +1200,20 @@ try {
          */
         case "deleteRecentLocation":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $idx = $vars['idx'];
             if(!isLocationIdxExist($idx)){
                 $res->isSuccess = FALSE;
@@ -818,9 +1257,6 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-
-
-            출처: https://brtech.tistory.com/36 [Dev Stack]
             if(!is_numeric($req->phone) || strlen($req->phone) != 11){
                 $res->isSuccess = FALSE;
                 $res->code = 204;
@@ -856,14 +1292,20 @@ try {
          */
         case "deleteUser":
             http_response_code(200);
-            $user_id = $vars['user_id'];
-            if(!isValidUser($user_id)){
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "존재하지 않는 사용자입니다.";
+                $res->message = "유효하지 않은 토큰입니다";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
-                break;
+                addErrorLogs($errorLogs, $res, $req);
+                return;
             }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             deleteUser($user_id); // body(request) 안에 있는 name 받아오기
             $res->isSuccess = TRUE;
             $res->code = 102;
@@ -878,6 +1320,20 @@ try {
          */
         case "addReview":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             if(!isValidOrder($req->order_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 206;
@@ -913,6 +1369,20 @@ try {
          */
         case "deleteReview":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $review_id = $vars['review_id'];
             if(!isValidReview($review_id)){
                 $res->isSuccess = FALSE;
@@ -936,21 +1406,35 @@ try {
         case "addReviewLike":
             $review_id = $vars['review_id'];
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
 
 
-            if(!isReviewLikeExist($review_id)){
-                addReviewLike($review_id); // body(request) 안에 있는 name 받아오기
+
+            if(!isReviewLikeExist($user_id, $review_id)){
+                addReviewLike($user_id, $review_id); // body(request) 안에 있는 name 받아오기
                 $res->message = "리뷰를 추천했습니다.";
                 $res->code = 101;
             }
             else{
-                if(getReviewLikeStatus($review_id)==false){
-                    updateReviewLikeToTrue($review_id); // body(request) 안에 있는 name 받아오기
+                if(getReviewLikeStatus($user_id, $review_id)==false){
+                    updateReviewLikeToTrue($user_id, $review_id); // body(request) 안에 있는 name 받아오기
                     $res->message = "리뷰를 추천했습니다.";
                     $res->code = 101;
                 }
                 else{
-                    updateReviewLikeToFalse($review_id); // body(request) 안에 있는 name 받아오기
+                    updateReviewLikeToFalse($user_id, $review_id); // body(request) 안에 있는 name 받아오기
                     $res->message = "리뷰 추천을 취소했습니다.";
                     $res->code = 102;
                 }
@@ -966,6 +1450,20 @@ try {
         */
         case "reportReview":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "유효하지 않은 토큰입니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
             $review_id = $vars['review_id'];
             if(!isValidReview($review_id)){
                 $res->isSuccess = FALSE;
@@ -974,14 +1472,14 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(isReviewAlreadyReport($review_id)){
+            if(isReviewAlreadyReport($user_id, $review_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 208;
                 $res->message = "이미 신고한 리뷰입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            reportReview($review_id);
+            reportReview($user_id, $review_id);
             $res->isSuccess = TRUE;
             $res->code = 102;
             $res->message = "리뷰 신고 성공";
