@@ -125,7 +125,7 @@ function updateFavoriteToFalse($user_id,$rest_id)
     $pdo = null;
 }
 
-// 3. 우리동네 플러스, 슈퍼레드위크, 일반음식점
+// 3. 우리동네 플러스, 슈퍼레드위크, 일반음식점 (회원용)
 
 //function restaurantTest($category, $user_id)
 //{
@@ -471,6 +471,352 @@ where super_red_week = 'N'
     return $res;
 }
 
+// 3. 우리동네 플러스, 슈퍼레드위크, 일반음식점 (비회원용)
+
+//function restaurantTest($category, $user_id)
+//{
+//    $category_filter="";
+//    switch($category){
+//        case "전체보기":
+//            $category_filter=';';
+//            break;
+//        case "1인분주문":
+//            $category_filter= " and is_portion = 'Y';";
+//            break;
+//        case "야식":
+//            $category_filter= " and is_night = 'Y';";
+//            break;
+//        case "프랜차이즈":
+//            $category_filter= " and is_franchise = 'Y';";
+//            break;
+//        case "요기요플러스":
+//            $category_filter= " and is_yogiyo_plus = 'Y';";
+//            break;
+//        case "치킨":
+//            $category_filter= " and restaurant.type = '치킨';";
+//            break;
+//        case "중국집":
+//            $category_filter= " and restaurant.type = '중국집';";
+//            break;
+//        case "피자/양식":
+//            $category_filter= " and restaurant.type = '피자/양식';";
+//            break;
+//        case "한식":
+//            $category_filter= " and restaurant.type = '한식';";
+//            break;
+//        case "분식":
+//            $category_filter= " and restaurant.type = '분식';";
+//            break;
+//        case "카페/디저트":
+//            $category_filter= " and restaurant.type = '카페/디저트';";
+//            break;
+//        case "족발/보쌈":
+//            $category_filter= " and restaurant.type = '족발/보쌈';";
+//            break;
+//        case "편의점/마트":
+//            $category_filter= " and restaurant.type = '편의점/마트';";
+//            break;
+//    }
+//    $pdo = pdoSqlConnect();
+//    // 우리 동네 플러스
+//    $query = "select restaurant_name,
+//       restaurant_id,
+//       restaurant.region,
+//       score,
+//       review_num,
+//       t.owner_comment_num,
+//       concat(delivery_discount,'원') as delivery_discount,
+//       discount_rate,
+//       is_best_restaurant,
+//       is_cesco,
+//       datediff(now(), created_at) as sales_days,
+//       estimated_delivery_time,
+//       image_url,
+//       is_deliver
+//from restaurant
+//         left outer join (
+//    select restaurant_id,
+//           round(avg((taste_score + quantity_score + delivery_score) / 3),1) as score,
+//           count(*)                                                 as review_num,
+//           count(review_owner_comment.contents)                     as owner_comment_num
+//    from (review
+//        left outer join orders using (order_id))
+//             left outer join review_owner_comment using (review_id)
+//    group by restaurant_id
+//) as t using (restaurant_id)
+//where restaurant.region = (select region from users where user_id = ?)";
+//
+//    $our_village_plus_filter = " and restaurant.our_village_plus = 'Y'";
+//    $super_red_week_filter = " and restaurant.super_red_week = 'Y'";
+//    $normal_restaurant_filter = " and restaurant.our_village_plus = 'N' and restaurant.super_red_week = 'Y'";
+//
+//    $st = $pdo->prepare($query.$our_village_plus_filter.$category_filter);
+//    $st->execute([$user_id]);
+//    $st->setFetchMode(PDO::FETCH_ASSOC);
+//    $our_village_plus = $st->fetchAll();
+//
+//    $st = $pdo->prepare($query.$super_red_week_filter.$category_filter);
+//    $st->execute([$user_id]);
+//    $st->setFetchMode(PDO::FETCH_ASSOC);
+//    $super_red_week = $st->fetchAll();
+//
+//    $st = $pdo->prepare($query.$normal_restaurant_filter.$category_filter);
+//    $st->execute([$user_id]);
+//    $st->setFetchMode(PDO::FETCH_ASSOC);
+//    $normal_restaurant = $st->fetchAll();
+//    $st = null;
+//    $pdo = null;
+//
+//    $res = array($our_village_plus, $super_red_week, $normal_restaurant);
+//    return $res;
+//}
+function getOurVillagePlusByCategoryForNonmember($category, $region)
+{
+    $where_clause="";
+    switch($category){
+        case "전체보기":
+            $where_clause=';';
+            break;
+        case "1인분주문":
+            $where_clause= " and is_portion = 'Y';";
+            break;
+        case "야식":
+            $where_clause= " and is_night = 'Y';";
+            break;
+        case "프랜차이즈":
+            $where_clause= " and is_franchise = 'Y';";
+            break;
+        case "요기요플러스":
+            $where_clause= " and is_yogiyo_plus = 'Y';";
+            break;
+        case "치킨":
+            $where_clause= " and restaurant.type = '치킨';";
+            break;
+        case "중국집":
+            $where_clause= " and restaurant.type = '중국집';";
+            break;
+        case "피자/양식":
+            $where_clause= " and restaurant.type = '피자/양식';";
+            break;
+        case "한식":
+            $where_clause= " and restaurant.type = '한식';";
+            break;
+        case "분식":
+            $where_clause= " and restaurant.type = '분식';";
+            break;
+        case "카페/디저트":
+            $where_clause= " and restaurant.type = '카페/디저트';";
+            break;
+        case "족발/보쌈":
+            $where_clause= " and restaurant.type = '족발/보쌈';";
+            break;
+        case "편의점/마트":
+            $where_clause= " and restaurant.type = '편의점/마트';";
+            break;
+    }
+    $pdo = pdoSqlConnect();
+    // 우리 동네 플러스
+    $query = "select restaurant_name,
+       restaurant_id,
+       restaurant.region,
+       score,
+       review_num,
+       t.owner_comment_num,
+       concat(delivery_discount,'원') as delivery_discount,
+       discount_rate,
+       is_best_restaurant,
+       is_cesco,
+       datediff(now(), created_at) as sales_days,
+       estimated_delivery_time,
+       image_url,
+       is_deliver
+from restaurant
+         left outer join (
+    select restaurant_id,
+           round(avg((taste_score + quantity_score + delivery_score) / 3),1) as score,
+           count(*)                                                 as review_num,
+           count(review_owner_comment.contents)                     as owner_comment_num
+    from (review
+        left outer join orders using (order_id))
+             left outer join review_owner_comment using (review_id)
+    group by restaurant_id
+) as t using (restaurant_id)
+where restaurant.our_village_plus = 'Y'
+  and restaurant.region = ?".$where_clause;
+
+    $st = $pdo->prepare($query);
+    $st->execute([$region]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+function getSuperRedWeekPlusByCategoryForNonmember($category, $region)
+{
+    $where_clause="";
+    switch($category){
+        case "전체보기":
+            $where_clause=';';
+            break;
+        case "1인분주문":
+            $where_clause= " and is_portion = 'Y';";
+            break;
+        case "야식":
+            $where_clause= " and is_night = 'Y';";
+            break;
+        case "프랜차이즈":
+            $where_clause= " and is_franchise = 'Y';";
+            break;
+        case "요기요플러스":
+            $where_clause= " and is_yogiyo_plus = 'Y';";
+            break;
+        case "치킨":
+            $where_clause= " and restaurant.type = '치킨';";
+            break;
+        case "중국집":
+            $where_clause= " and restaurant.type = '중국집';";
+            break;
+        case "피자/양식":
+            $where_clause= " and restaurant.type = '피자/양식';";
+            break;
+        case "한식":
+            $where_clause= " and restaurant.type = '한식';";
+            break;
+        case "분식":
+            $where_clause= " and restaurant.type = '분식';";
+            break;
+        case "카페/디저트":
+            $where_clause= " and restaurant.type = '카페/디저트';";
+            break;
+        case "족발/보쌈":
+            $where_clause= " and restaurant.type = '족발/보쌈';";
+            break;
+        case "편의점/마트":
+            $where_clause= " and restaurant.type = '편의점/마트';";
+            break;
+    }
+    $pdo = pdoSqlConnect();
+    $query = "select restaurant_name,
+       restaurant_id,
+       restaurant.region,
+       score,
+       review_num,
+       t.owner_comment_num,
+       concat(delivery_discount,'원') as delivery_discount,
+       discount_rate,
+       is_best_restaurant,
+       is_cesco,
+       datediff(now(), created_at) as sales_days,
+       estimated_delivery_time,
+       image_url,
+       is_deliver
+from restaurant
+         left outer join (
+   select restaurant_id, round(avg((taste_score + quantity_score + delivery_score) / 3),1) as score, count(*) as review_num, count(review_owner_comment.contents) as owner_comment_num
+from (review
+         left outer join orders using (order_id)) left outer join review_owner_comment using (review_id)
+group by restaurant_id
+) as t using (restaurant_id)
+where super_red_week = 'Y' and restaurant.region = ?".$where_clause;
+
+    $st = $pdo->prepare($query);
+    $st->execute([$region]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+function getNormalRestaurantByCategoryForNonmember($category, $region)
+{
+    $where_clause="";
+    switch($category){
+        case "전체보기":
+            $where_clause=';';
+            break;
+        case "1인분주문":
+            $where_clause= " and is_portion = 'Y';";
+            break;
+        case "야식":
+            $where_clause= " and is_night = 'Y';";
+            break;
+        case "프랜차이즈":
+            $where_clause= " and is_franchise = 'Y';";
+            break;
+        case "요기요플러스":
+            $where_clause= " and is_yogiyo_plus = 'Y';";
+            break;
+        case "치킨":
+            $where_clause= " and restaurant.type = '치킨';";
+            break;
+        case "중국집":
+            $where_clause= " and restaurant.type = '중국집';";
+            break;
+        case "피자/양식":
+            $where_clause= " and restaurant.type = '피자/양식';";
+            break;
+        case "한식":
+            $where_clause= " and restaurant.type = '한식';";
+            break;
+        case "분식":
+            $where_clause= " and restaurant.type = '분식';";
+            break;
+        case "카페/디저트":
+            $where_clause= " and restaurant.type = '카페/디저트';";
+            break;
+        case "족발/보쌈":
+            $where_clause= " and restaurant.type = '족발/보쌈';";
+            break;
+        case "편의점/마트":
+            $where_clause= " and restaurant.type = '편의점/마트';";
+            break;
+    }
+    $pdo = pdoSqlConnect();
+    $query = "select restaurant_name,
+       restaurant_id,
+       restaurant.region,
+       score,
+       review_num,
+       t.owner_comment_num,
+       concat(delivery_discount,'원') as delivery_discount,
+       discount_rate,
+       is_best_restaurant,
+       is_cesco,
+       datediff(now(), created_at) as sales_days,
+       estimated_delivery_time,
+       image_url,
+       is_deliver
+from restaurant
+         left outer join (
+    select restaurant_id,
+           round(avg((taste_score + quantity_score + delivery_score) / 3),1) as score,
+           count(*)                                                 as review_num,
+           count(review_owner_comment.contents)                     as owner_comment_num
+    from (review
+        left outer join orders using (order_id))
+             left outer join review_owner_comment using (review_id)
+    group by restaurant_id
+) as t using (restaurant_id)
+where super_red_week = 'N'
+  and our_village_plus = 'N'
+  and restaurant.region = ?".$where_clause;;
+
+    $st = $pdo->prepare($query);
+    $st->execute([$region]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+
 // 4. 메뉴 검색
 function findMenu($keyword, $user_id)
 {
@@ -493,6 +839,35 @@ group by restaurant_id;";
 
     $st = $pdo->prepare($query);
     $st->execute([$keyword, $user_id]);
+    $st->setFetchMode(PDO::FETCH_ASSOC);
+    $res = $st->fetchAll();
+
+    $st = null;
+    $pdo = null;
+
+    return $res;
+}
+function findMenuForNonmember($keyword, $region)
+{
+    $pdo = pdoSqlConnect();
+    $query = "select restaurant_id,
+       restaurant_name,
+       restaurant.image_url,
+       datediff(now(), restaurant.created_at)                                        as sales_days,
+       restaurant.is_best_restaurant,
+       restaurant.is_cesco,
+       estimated_delivery_time,
+       ifnull(round(avg((taste_score + quantity_score + delivery_score) / 3), 1), 0) as score,
+       count(distinct review_id)                                                     as review_num,
+       count(distinct review_owner_comment.contents)                                 as owner_comment_num,
+       group_concat(menu_name separator ',')                                         as searched_menu
+from (((restaurant join menu using (restaurant_id)) left outer join orders using (restaurant_id)) left outer join review using (order_id))
+         left outer join review_owner_comment using (review_id)
+where menu_name like concat('%', ?, '%') and restaurant.region = ?
+group by restaurant_id;";
+
+    $st = $pdo->prepare($query);
+    $st->execute([$keyword, $region]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
@@ -869,7 +1244,7 @@ where orders.order_id = ?;";
 function getOrderedMenu($order_id)
 {
     $pdo = pdoSqlConnect();
-    $query="select ordered_menu.order_id, menu_name, quantity, ordered_menu.price, option_name, ordered_menu.extra_charge
+    $query="select concat(menu_name, ' x ' ,quantity) as menu_list, ordered_menu.price, ifnull(concat(' - ',additional_option.option_type, ': ',option_name), '없음') as option_list, ordered_menu.extra_charge
 from (ordered_menu left outer join menu using (menu_id))  left outer join additional_option using (option_id)
 where ordered_menu.order_id=?;";
     $st = $pdo->prepare($query);
@@ -988,7 +1363,6 @@ function addOrders($order_id, $rest_id, $user_id, $payment_type, $request, $orde
 values (?,?,?,?,?,?,?,?,?);";
     $st = $pdo->prepare($query);
     $st->execute([$order_id, $rest_id, $user_id, $payment_type, $request, $order_type, $delivery_price, $delivery_discount, $user_location]);
-
     $st = null;
     $pdo = null;
 }

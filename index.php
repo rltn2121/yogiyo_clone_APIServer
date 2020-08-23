@@ -34,9 +34,13 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
 
     // 3. 카테고리별 음식점 조회
     $r->addRoute('GET', '/search/restaurant', ['IndexController', 'getRestaurantByCategory']);
-
+// 3. 카테고리별 음식점 조회(비회원)
+    $r->addRoute('GET', '/non-member/search/restaurant', ['IndexController', 'getRestaurantByCategoryForNonmember']);
     // 4. 메뉴 검색
     $r->addRoute('GET', '/search/menu', ['IndexController', 'findMenu']);
+
+    // 4. 메뉴 검색(비회원)
+    $r->addRoute('GET', '/non-member/search/menu', ['IndexController', 'findMenuForNonmember']);
 
     // 5. 최근 검색어 조회
     $r->addRoute('GET', '/keyword', ['IndexController', 'getRecentSearchKeyword']);
@@ -81,6 +85,9 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
 
     // 15. 주문하기
     $r->addRoute('POST', '/order', ['IndexController', 'addOrders']);
+
+    // 15. 주문하기(비회원용)
+    $r->addRoute('POST', '/non-member/order', ['IndexController', 'addOrdersForNonmember']);
 
     // 16. 재주문하기 (주문표에 추가)
     $r->addRoute('POST', '/re-order/{order_id}', ['IndexController', 'reOrder']);

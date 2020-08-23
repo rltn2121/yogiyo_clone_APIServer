@@ -36,7 +36,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -65,7 +65,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -114,7 +114,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -141,6 +141,32 @@ try {
             break;
 
         /*
+     * API No. 3
+     * API Name : 카테고리별 음식점(비회원) API
+     * 마지막 수정 날짜 : 20.08.18
+     */
+        case "getRestaurantByCategoryForNonmember":
+            http_response_code(200);
+            $region = $_GET['region'];
+            $category = $_GET['category'];
+            if(!isValidCategory($category)){
+                $res->isSuccess = FALSE;
+                $res->code = 207;
+                $res->message = "유효하지 않은 카테고리입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+            //$res->test = restaurantTest($category, $user_id);
+            $res->our_village_plus = getOurVillagePlusByCategoryForNonmember($category,$region);
+            $res->super_red_week = getSuperRedWeekPlusByCategoryForNonmember($category,$region);
+            $res->normal_restaurant = getNormalRestaurantByCategoryForNonmember($category,$region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+
+        /*
          * API No. 4
          * API Name : 메뉴 검색 API
          * 마지막 수정 날짜 : 20.08.21
@@ -152,7 +178,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -174,6 +200,22 @@ try {
             $res->message = "조회 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
+        /*
+   * API No. 4
+   * API Name : 메뉴 검색 (비회원)API
+   * 마지막 수정 날짜 : 20.08.21
+   */
+        case "findMenuForNonmember":
+            http_response_code(200);
+            $region = $_GET['region'];
+            $keyword = $_GET['keyword'];
+
+            $res->result = findMenuForNonmember($keyword, $region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
 
         /*
          * API No. 5
@@ -187,7 +229,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -215,7 +257,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -251,7 +293,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -274,20 +316,6 @@ try {
          */
         case "getRestaurantMain":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -310,20 +338,6 @@ try {
          */
         case "getRestaurantMenu":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -348,20 +362,6 @@ try {
          */
         case "getRestaurantReview":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -384,20 +384,6 @@ try {
          */
         case "getRestaurantInfo":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
@@ -420,20 +406,6 @@ try {
          */
         case "getMenuOption":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $rest_id = $vars['rest_id'];
             $menu_id = $vars['menu_id'];
             if(!isValidMenu($menu_id, $rest_id)){
@@ -462,7 +434,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -491,7 +463,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -515,20 +487,6 @@ try {
          */
         case "getOrderDetail":
             http_response_code(200);
-            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
-
-            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
-                $res->isSuccess = FALSE;
-                $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                addErrorLogs($errorLogs, $res, $req);
-                return;
-            }
-
-            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
-            $user_id = getUserIdByEmail($data->email);
-
             $order_id = $vars['order_id'];
             if(!isValidOrder($order_id)){
                 $res->isSuccess = FALSE;
@@ -557,7 +515,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -632,7 +590,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -668,7 +626,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -695,7 +653,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -704,8 +662,8 @@ try {
             $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
             $user_id = getUserIdByEmail($data->email);
 
-            if($req->order_id==null || $req->rest_id == null || $req->payment_type == null ||
-                $req->order_type == null || $req->menu_id == null || $req->quantity == null){
+            if($req->order_id==null ||  $req->payment_type == null ||
+                $req->order_type == null){
                 $res->isSuccess = FALSE;
                 $res->code = 202;
                 $res->message = "정보 누락 or quantity == 0";
@@ -719,27 +677,24 @@ try {
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(!isValidRestaurant($req->rest_id)){
+
+            if(!($req->payment_type == '신용카드' || $req->payment_type == '현금' || $req->payment_type == '요기서 1초 결제')){
+                $res->isSuccess = FALSE;
+                $res->code = 100;
+                $res->message = "결제방식을 확인해주세요.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+
+            $rest_id = getCurrentRestaurantID($user_id);
+            if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
                 $res->code = 202;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            if(!isValidMenu($req->menu_id, $req->rest_id)){
-                $res->isSuccess = FALSE;
-                $res->code = 203;
-                $res->message = "유효하지 않은 메뉴입니다.";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                break;
-            }
-            if($req->option_id != 0 && !isValidOption($req->option_id, $req->menu_id)){
-                $res->isSuccess = FALSE;
-                $res->code = 203;
-                $res->message = "유효하지 않은 옵션입니다.";
-                echo json_encode($res, JSON_NUMERIC_CHECK);
-                break;
-            }
+
             $request = "";
             if($req->request == null)
                 $request = "요청사항 없음";
@@ -748,16 +703,28 @@ try {
 
             $user_region_address = getUserLocation($user_id);
             $user_location = $user_region_address['region'].' '.$user_region_address['address'];
-
-            addOrders($req->order_id, $req->rest_id, $user_id, $req->payment_type, $request, $req->order_type, $user_location);
+            addOrders($req->order_id, $rest_id, $user_id, $req->payment_type, $request, $req->order_type, $user_location);
 
             $order_pad_list = getOrderPad($user_id);
             $order_pad_list_count = count($order_pad_list);
             for($i = 0; $i<$order_pad_list_count; $i++){
+                if(!isValidMenu($order_pad_list[$i]['menu_id'], $rest_id)){
+                    $res->isSuccess = FALSE;
+                    $res->code = 203;
+                    $res->message = "유효하지 않은 메뉴입니다.";
+                    echo json_encode($res, JSON_NUMERIC_CHECK);
+                    break;
+                }
+                if($order_pad_list[$i]['option_id'] != 0 && !isValidOption($order_pad_list[$i]['option_id'], $order_pad_list[$i]['menu_id'])){
+                    $res->isSuccess = FALSE;
+                    $res->code = 203;
+                    $res->message = "유효하지 않은 옵션입니다.";
+                    echo json_encode($res, JSON_NUMERIC_CHECK);
+                    break;
+                }
                 addOrderedMenu($req->order_id, $order_pad_list[$i]['menu_id'], $order_pad_list[$i]['quantity'], $order_pad_list[$i]['option_id']);
             }
             deleteAllItems($user_id);
-
 
             $res->isSuccess = TRUE;
             $res->code = 101;
@@ -765,6 +732,84 @@ try {
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
+        /* API No. 15
+   * API Name : 주문하기 (비회원) API
+   * 마지막 수정 날짜 : 20.08.21
+   */
+        case "addOrdersForNonmember":
+            http_response_code(200);
+
+            if($req->order_id==null ||  $req->payment_type == null ||
+                $req->order_type == null){
+                $res->isSuccess = FALSE;
+                $res->code = 202;
+                $res->message = "정보 누락 or quantity == 0";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+            if(isValidOrder($req->order_id)){
+                $res->isSuccess = FALSE;
+                $res->code = 100;
+                $res->message = "주문번호가 이미 존재합니다";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+            if(!($req->payment_type == '신용카드' || $req->payment_type == '현금' || $req->payment_type == '요기서 1초 결제')){
+                $res->isSuccess = FALSE;
+                $res->code = 100;
+                $res->message = "결제방식을 확인해주세요.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+
+            // 화원용 -> getOrderPad 함수 써서 주문표 받음
+            // 비회원용 -> body에서 주문표 받음
+            $order_pad_list = $req->order_pad;
+
+
+            $rest_id = $order_pad_list[0]->rest_id;
+
+            if(!isValidRestaurant($rest_id)){
+                $res->isSuccess = FALSE;
+                $res->code = 202;
+                $res->message = "유효하지 않은 식당입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+
+            $request = "";
+            if($req->request == null)
+                $request = "요청사항 없음";
+            else
+                $request = $req->request;
+
+            $user_location = $req->region.' '.$req->address;
+            addOrders($req->order_id, $rest_id, 10000000, $req->payment_type, $request, $req->order_type, $user_location);
+
+            $order_pad_list_count = count($order_pad_list);
+            for($i = 0; $i<$order_pad_list_count; $i++){
+                if(!isValidMenu($order_pad_list[$i]->menu_id, $rest_id)){
+                    $res->isSuccess = FALSE;
+                    $res->code = 203;
+                    $res->message = "유효하지 않은 메뉴입니다.";
+                    echo json_encode($res, JSON_NUMERIC_CHECK);
+                    break;
+                }
+                if($order_pad_list[$i]->option_id != 0 && !isValidOption($order_pad_list[$i]->option_id, $order_pad_list[$i]->menu_id)){
+                    $res->isSuccess = FALSE;
+                    $res->code = 203;
+                    $res->message = "유효하지 않은 옵션입니다.";
+                    echo json_encode($res, JSON_NUMERIC_CHECK);
+                    break;
+                }
+                addOrderedMenu($req->order_id, $order_pad_list[$i]->menu_id, $order_pad_list[$i]->quantity, $order_pad_list[$i]->option_id);
+            }
+
+            $res->isSuccess = TRUE;
+            $res->code = 101;
+            $res->message = "주문이 추가됐습니다.";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
         /*
          * API No. 16
          * API Name : 재주문하기(주문표에 추가) API
@@ -777,7 +822,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -824,7 +869,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -852,7 +897,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -881,7 +926,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -909,7 +954,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -974,7 +1019,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1020,7 +1065,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1071,7 +1116,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1113,7 +1158,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1148,7 +1193,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1177,7 +1222,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1205,7 +1250,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1297,7 +1342,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1325,7 +1370,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1374,7 +1419,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1411,7 +1456,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
@@ -1455,7 +1500,7 @@ try {
             if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
                 $res->isSuccess = FALSE;
                 $res->code = 201;
-                $res->message = "유효하지 않은 토큰입니다";
+                $res->message = "로그인이 필요한 서비스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 addErrorLogs($errorLogs, $res, $req);
                 return;
