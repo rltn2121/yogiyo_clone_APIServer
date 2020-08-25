@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html;charset=euc-kr">
+<title>ȸ������</title>
+ <link href="Style.css" type="text/css" rel="stylesheet">
+</head>
+
+
+<body>
+	<br>
+	<h1 style="text-align: center;">회원가입</h1>
+	<form action = Subscription.jsp method = POST>
+	<div>	<TABLE align="center">
+			<tr>
+				<td>아이디</td>
+				<td><input type="text" name="ID" placeholder="ID"></td>
+			</tr>
+
+			<tr>
+				<td>비밀번호</td>
+				<td><input type="password" name="PW"
+					placeholder="password"></td>
+			</tr>
+
+			<tr>
+				<td><br></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>이름</td>
+				<td><input type="text" name="NAME" placeholder="이름"></td>
+			</tr>
+
+			<tr>
+				<td>이메일</td>
+				<td><input type="email" name="EMAIL" placeholder="E-mail">
+				</td>
+			</tr>
+
+			<tr>
+				<td>생년월일</td>
+				<td><input type="text" name="BD" placeholder="ex) 1999-01-01">
+				</td>
+			</tr>
+
+				<tr>
+				<td>성별</td>
+				<td>남자<input type="radio" name="GENDER" value = "male">
+				여자<input type="radio" name="GENDER" value = "female">
+				</td>
+			</tr>
+
+			<tr>
+				<td></td>
+				<td><input type="submit" name="SIGNUP" value="회원가입"></td>
+			</tr>
+
+			
+		</TABLE>
+		</div>
+	</form>
+</body>
+</html>

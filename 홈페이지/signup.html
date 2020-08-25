@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://kit.fontawesome.com/c5ed300662.js" crossorigin="anonymous"></script>
+    <script src="main.js" defer></script>
+    <title>인다배소리</title>
+    
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar__logo">
+            <a href="index.html"><img src="/img/indabae_logo_gray.png"  alt="인다배소리" height = "80px" width ="240px" ></a>
+        </div>
+
+        <ul class="navbar__menu">
+            <li><a href="introduction.html">동아리소개</a></li>
+            <li><a href="gallery.html">갤러리</a></li>
+            <li><a href="community.html">커뮤니티</a></li>
+            <li><a href="notice.html">공지사항</a></li>
+            <li><a href="signup.html">가입신청</a></li>
+        </ul>
+
+        <ul class="navbar__icons">
+            <a href="https://twitter.com"><li><i class="fab fa-twitter"></i></li></a>
+            <a href="https://www.facebook.com/groups/287356728021574/"><li><i class="fab fa-facebook"></i></li></a>
+           <a href="https://www.instagram.com/ki_sooooo/?hl=ko"> <li><i class="fab fa-instagram"></i></li></a>
+        </ul>
+
+        <a href="#" class="navbar__toggleBtn"><i class="fas fa-bars"></i></a>
+    </nav>
+    
+    <h1 style="text-align: center;">가입신청</h1>
+	<form id="info" action = test.html method = get>
+        <div align="center">	
+        <TABLE>
+			<tr>
+				<td>아이디</td>
+				<td><input type="text" id="ID" placeholder="ID"></td>
+			</tr>
+			<tr>
+				<td>비밀번호</td>
+				<td><input type="password" id="PW" placeholder="password"></td>
+            </tr>
+            <tr>
+				<td>비밀번호 확인</td>
+				<td><input type="password" id="PW_check" placeholder="password"></td>
+			</tr>
+			<tr>
+				<td><br></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>이름</td>
+				<td><input type="text" id="NAME" placeholder="이름"></td>
+			</tr>
+			<tr>
+				<td>이메일</td>
+				<td><input type="email" id="EMAIL" placeholder="E-mail">
+				</td>
+			</tr>
+
+			<tr>
+				<td>생년월일</td>
+				<td><input type="text" id="BD" placeholder="ex) 1999-01-01">
+				</td>
+			</tr>
+
+				<tr>
+				<td>성별</td>
+				<td>남자<input type="radio" id="male" name = "GENDER" value = "male">
+				여자<input type="radio" id="female" name = "GENDER" value = "female">
+				</td>
+			</tr>
+
+			<tr>
+				<td></td>
+				<td><input type="submit" id="SIGNUP" value="가입신청""></td>
+			</tr>
+
+			
+		</TABLE>
+		</div>
+    </form>
+    <script>
+        var id_pw_RegExp = /^[a-zA-Z0-9]{4,12}$/; // 아이디와 패스워드가 적합한지 검사할 정규식
+        var name_RegExp = /^[가-힣]{2,4}$/;
+        var id = document.getElementById('ID');
+        var pw = document.getElementById('PW');
+        var pw_check = document.getElementById('PW_check');
+        var name =document.getElementById('NAME');
+        var email = document.getElementById('EMAIL');
+        var birth = document.getElementById('BD');
+        
+        
+        var t = document.getElementById('info');
+        t.addEventListener('submit', function(event){
+            if(!id_pw_RegExp.test(id.value)){
+                alert('ID를 확인해주세요. (4~12자의 영어 대소문자와 숫자로만 입력)');
+                event.preventDefault();
+            }
+            else if(!id_pw_RegExp.test(pw.value)){
+                alert('비밀번호를 확인해주세요.(4~12자의 영어 대소문자와 숫자로만 입력)');
+                event.preventDefault();
+            }
+
+            else if(pw.value != pw_check.value){
+                alert('비밀번호가 일치하지 않습니다.');
+                event.preventDefault();
+            }
+            else if(!name_RegExp.test(document.getElementById('NAME').value)){
+                alert('이름을 확인해주세요. (2~4자리 한글)');
+                alert(document.getElementById('NAME').value);
+                event.preventDefault();
+            }
+            
+            else if(email.value.length == 0){
+                alert('이메일을 입력해주세요.');
+                event.preventDefault();
+            }
+            else if(birth.value.length == 0){
+                alert('생년월일을 입력해주세요.');
+                event.preventDefault();
+            }
+
+        })
+    </script>
+
+</body>
+</html>
