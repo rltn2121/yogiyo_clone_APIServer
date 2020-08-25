@@ -1530,6 +1530,335 @@ try {
             $res->message = "리뷰 신고 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
+
+        /*
+         * API No. 34.1
+         * API Name : 우리동네 찜 많은 음식점 (찜한 수 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getFavoriteMostRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getFavoriteMostRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 35.1
+         * API Name : 학익동 오늘만 할인 (배달할인 or 할인율 > 0) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getTodayDiscountRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $delivery_discount = getTodayDeliveryDiscountRestaurant($user_id);
+            $discount_rate = getTodayDiscountRateRestaurant($user_id);
+            $res->result = array($delivery_discount, $discount_rate);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 36.1
+         * API Name : 요즘 뜨는 우리동네 음식점 (최근 30일 이내 식당 주문량 기준) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getRecentBestRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getRecentBestRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 37.1
+         * API Name : 학익동 배달비 무료 API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getDeliverFreeRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getDeliverFreeRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 38.1
+         * API Name : 최근 7일 동안 리뷰가 많아요! (최근 7일 이내 작성된 리뷰 개수 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getMostReviewRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getMostReviewRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 39.1
+         * API Name : 요기요 플러스 맛집 API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getYogiyoPlusRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getYogiyoPlusRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 40.1
+         * API Name : 가장 빨리 배달되요 (배달시간 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getFastDeliverRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getFastDeliverRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 41.1
+         * API Name : 새로 오픈했어요 (개업한 지 7일 이하) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getNewlyOpenedRestaurant":
+            http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
+
+            $res->result = getNewlyOpenedRestaurant($user_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+
+
+        /*
+         * API No. 34.2
+         * API Name : (비회원)우리동네 찜 많은 음식점 (찜한 수 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getFavoriteMostRestaurantForNonmember":
+            http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getFavoriteMostRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 35.2
+         * API Name : (비회원)학익동 오늘만 할인 (배달할인 or 할인율 > 0) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getTodayDiscountRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $delivery_discount = getTodayDeliveryDiscountRestaurantForNonmenber($user_id);
+            $discount_rate = getTodayDiscountRateRestaurantForNonmenber($user_id);
+            $res->result = array($delivery_discount, $discount_rate);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 36.2
+         * API Name : (비회원)요즘 뜨는 우리동네 음식점 (최근 30일 이내 식당 주문량 기준) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getRecentBestRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getRecentBestRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 37.2
+         * API Name : (비회원)학익동 배달비 무료 API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getDeliverFreeRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getDeliverFreeRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 38.2
+         * API Name : (비회원)최근 7일 동안 리뷰가 많아요! (최근 7일 이내 작성된 리뷰 개수 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getMostReviewRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getMostReviewRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 39.2
+         * API Name : (비회원)요기요 플러스 맛집 API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getYogiyoPlusRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getYogiyoPlusRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 40.2
+         * API Name : (비회원)가장 빨리 배달되요 (배달시간 기준 정렬) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getFastDeliverRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getFastDeliverRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+        /*
+         * API No. 41.2
+         * API Name : (비회원)새로 오픈했어요 (개업한 지 7일 이하) API
+         * 마지막 수정 날짜 : 20.08.25
+         */
+        case "getNewlyOpenedRestaurantForNonmember":http_response_code(200);
+            $region = $_GET['region'];
+            $res->result = getNewlyOpenedRestaurantForNonmenber($region);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
+
     }
 } catch (\Exception $e) {
     echo "sql 오류";

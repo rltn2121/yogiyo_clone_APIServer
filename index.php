@@ -34,7 +34,7 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
 
     // 3. 카테고리별 음식점 조회
     $r->addRoute('GET', '/search/restaurant', ['IndexController', 'getRestaurantByCategory']);
-// 3. 카테고리별 음식점 조회(비회원)
+    // 3. 카테고리별 음식점 조회(비회원)
     $r->addRoute('GET', '/non-member/search/restaurant', ['IndexController', 'getRestaurantByCategoryForNonmember']);
     // 4. 메뉴 검색
     $r->addRoute('GET', '/search/menu', ['IndexController', 'findMenu']);
@@ -143,9 +143,53 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     // 33. 리뷰 신고
     $r->addRoute('POST', '/review/{review_id}', ['IndexController', 'reportReview']);
 
+    // 34.1. 우리동네 찜 많은 음식점 (찜한 수 기준 정렬)
+    $r->addRoute('GET', '/main/favorite-most', ['IndexController', 'getFavoriteMostRestaurant']);
 
+    // 35.1. 학익동 오늘만 할인 (배달할인 or 할인율 > 0)
+    $r->addRoute('GET', '/main/discount', ['IndexController', 'getTodayDiscountRestaurant']);
 
+    // 36.1. 요즘 뜨는 우리동네 음식점 (최근 30일 이내 식당 주문량 기준)
+    $r->addRoute('GET', '/main/best-restaurant', ['IndexController', 'getRecentBestRestaurant']);
 
+    // 37.1. 학익동 배달비 무료
+    $r->addRoute('GET', '/main/deliver-free', ['IndexController', 'getDeliverFreeRestaurant']);
+
+    // 38.1. 최근 7일 동안 리뷰가 많아요! (최근 7일 이내 작성된 리뷰 개수 기준 정렬)
+    $r->addRoute('GET', '/main/review-most', ['IndexController', 'getMostReviewRestaurant']);
+
+    // 39.1. 요기요 플러스 맛집
+    $r->addRoute('GET', '/main/yogiyo-plus', ['IndexController', 'getYogiyoPlusRestaurant']);
+
+    // 40.1. 가장 빨리 배달되요 (배달시간 기준 정렬)
+    $r->addRoute('GET', '/main/shortest-deliver-time', ['IndexController', 'getFastDeliverRestaurant']);
+
+    // 41.1. 새로 오픈했어요 (개업한 지 7일 이하)
+    $r->addRoute('GET', '/main/lastest-restaurant', ['IndexController', 'getNewlyOpenedRestaurant']);
+
+    // 34.2. (비회원)우리동네 찜 많은 음식점 (찜한 수 기준 정렬)
+    $r->addRoute('GET', '/non-member/main/favorite-most', ['IndexController', 'getFavoriteMostRestaurantForNonmember']);
+
+    // 35.2. (비회원)학익동 오늘만 할인 (배달할인 or 할인율 > 0)
+    $r->addRoute('GET', '/non-member/main/discount', ['IndexController', 'getTodayDiscountRestaurantForNonmember']);
+
+    // 36.2. (비회원)요즘 뜨는 우리동네 음식점 (최근 30일 이내 식당 주문량 기준)
+    $r->addRoute('GET', '/non-member/main/best-restaurant', ['IndexController', 'getRecentBestRestaurantForNonmember']);
+
+    // 37.2. (비회원)학익동 배달비 무료
+    $r->addRoute('GET', '/non-member/main/deliver-free', ['IndexController', 'getDeliverFreeRestaurantForNonmember']);
+
+    // 38.2. (비회원)최근 7일 동안 리뷰가 많아요! (최근 7일 이내 작성된 리뷰 개수 기준 정렬)
+    $r->addRoute('GET', '/non-member/main/review-most', ['IndexController', 'getMostReviewRestaurantForNonmember']);
+
+    // 39.2. (비회원)요기요 플러스 맛집
+    $r->addRoute('GET', '/non-member/main/yogiyo-plus', ['IndexController', 'getYogiyoPlusRestaurantForNonmember']);
+
+    // 40.2. (비회원)가장 빨리 배달되요 (배달시간 기준 정렬)
+    $r->addRoute('GET', '/non-member/main/shortest-deliver-time', ['IndexController', 'getFastDeliverRestaurantForNonmember']);
+
+    // 41.2. (비회원)새로 오픈했어요 (개업한 지 7일 이하)
+    $r->addRoute('GET', '/non-member/main/lastest-restaurant', ['IndexController', 'getNewlyOpenedRestaurantForNonmember']);
 
 
 
