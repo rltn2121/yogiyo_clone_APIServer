@@ -45,8 +45,9 @@ try {
             $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
             $user_id = getUserIdByEmail($data->email);
 
-            $res->count = getFavoriteCount($user_id);
-            $res->restaurant = getFavoriteRestaurant($user_id);
+            $result['total_count'] = getFavoriteCount($user_id);
+            $result['fav_restaurant'] = getFavoriteRestaurant($user_id);
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -75,35 +76,36 @@ try {
             $user_id = getUserIdByEmail($data->email);
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
 
+            $res->isSuccess = TRUE;
             if(!isFavoriteExist($user_id,$rest_id)){
                 addFavorite($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
-                $res->message = "찜 목록에 추가되었습니다.";
                 $res->code = 101;
+                $res->message = "찜 목록에 추가되었습니다.";
             }
             else{
                 if(getFavoriteStatus($user_id,$rest_id)==false){
                     updateFavoriteToTrue($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
-                    $res->message = "찜 목록에 추가되었습니다.";
                     $res->code = 101;
+                    $res->message = "찜 목록에 추가되었습니다.";
                 }
                 else{
                     updateFavoriteToFalse($user_id,$rest_id); // body(request) 안에 있는 name 받아오기
-                    $res->message = "찜 목록에서 삭제되었습니다.";
                     $res->code = 102;
+                    $res->message = "찜 목록에서 삭제되었습니다.";
                 }
             }
-            $res->isSuccess = TRUE;
+
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
         /*
-         * API No. 3
+         * API No. 3.1
          * API Name : 카테고리별 음식점 API
          * 마지막 수정 날짜 : 20.08.18
          */
@@ -125,15 +127,16 @@ try {
             $category = $_GET['category'];
             if(!isValidCategory($category)){
                 $res->isSuccess = FALSE;
-                $res->code = 207;
+                $res->code = 211;
                 $res->message = "유효하지 않은 카테고리입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             //$res->test = restaurantTest($category, $user_id);
-            $res->our_village_plus = getOurVillagePlusByCategory($category,$user_id);
-            $res->super_red_week = getSuperRedWeekPlusByCategory($category,$user_id);
-            $res->normal_restaurant = getNormalRestaurantByCategory($category,$user_id);
+            $result['our_village_plus'] = getOurVillagePlusByCategory($category, $user_id);
+            $result['super_red_week'] = getSuperRedWeekPlusByCategory($category, $user_id);
+            $result['normal_restaurant'] = getNormalRestaurantByCategory($category, $user_id);
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -141,25 +144,26 @@ try {
             break;
 
         /*
-     * API No. 3
-     * API Name : 카테고리별 음식점(비회원) API
-     * 마지막 수정 날짜 : 20.08.18
-     */
+         * API No. 3.2
+         * API Name : 카테고리별 음식점(비회원) API
+         * 마지막 수정 날짜 : 20.08.18
+         */
         case "getRestaurantByCategoryForNonmember":
             http_response_code(200);
             $region = $_GET['region'];
             $category = $_GET['category'];
             if(!isValidCategory($category)){
                 $res->isSuccess = FALSE;
-                $res->code = 207;
+                $res->code = 211;
                 $res->message = "유효하지 않은 카테고리입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             //$res->test = restaurantTest($category, $user_id);
-            $res->our_village_plus = getOurVillagePlusByCategoryForNonmember($category,$region);
-            $res->super_red_week = getSuperRedWeekPlusByCategoryForNonmember($category,$region);
-            $res->normal_restaurant = getNormalRestaurantByCategoryForNonmember($category,$region);
+            $result['our_village_plus'] = getOurVillagePlusByCategoryForNonmember($category,$region);
+            $result['super_red_week'] = getSuperRedWeekPlusByCategoryForNonmember($category,$region);
+            $result['normal_restaurant'] = getNormalRestaurantByCategoryForNonmember($category,$region);
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -167,7 +171,7 @@ try {
             break;
 
         /*
-         * API No. 4
+         * API No. 4.1
          * API Name : 메뉴 검색 API
          * 마지막 수정 날짜 : 20.08.21
          */
@@ -201,10 +205,10 @@ try {
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
         /*
-   * API No. 4
-   * API Name : 메뉴 검색 (비회원)API
-   * 마지막 수정 날짜 : 20.08.21
-   */
+         * API No. 4.2
+         * API Name : 메뉴 검색 (비회원)API
+         * 마지막 수정 날짜 : 20.08.21
+         */
         case "findMenuForNonmember":
             http_response_code(200);
             $region = $_GET['region'];
@@ -241,7 +245,7 @@ try {
             $res->result = getRecentSearchKeyword($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
-            $res->message = "최근 검색어 조회 성공";
+            $res->message = "조회 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
@@ -267,9 +271,9 @@ try {
             $user_id = getUserIdByEmail($data->email);
 
             $idx = $vars['idx'];
-            if(!isKeywordIdxExist($user_id,$idx)){
+            if(!isKeywordIdxExist($idx)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 212;
                 $res->message = "존재하지 않는 인덱스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -319,12 +323,12 @@ try {
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->main = getRestaurantMain($rest_id);
+            $res->result = getRestaurantMain($rest_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -341,13 +345,14 @@ try {
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->best_menu = getRestaurantBestMenu($rest_id);
-            $res->menu = getRestaurantMenu($rest_id);
+            $result['best_menu'] = getRestaurantBestMenu($rest_id);
+            $result['menu'] = getRestaurantMenu($rest_id);
+            $res->result = $result;
 
             $res->isSuccess = TRUE;
             $res->code = 100;
@@ -356,27 +361,61 @@ try {
             break;
 
         /*
-         * API No. 8.3
+         * API No. 8.3.1
          * API Name : 특정 음식점 리뷰 조회 API
          * 마지막 수정 날짜 : 20.08.20
          */
         case "getRestaurantReview":
             http_response_code(200);
+            $jwt = $_SERVER["HTTP_X_ACCESS_TOKEN"];
+
+            if (!isValidHeader($jwt, JWT_SECRET_KEY)) {
+                $res->isSuccess = FALSE;
+                $res->code = 201;
+                $res->message = "로그인이 필요한 서비스입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                addErrorLogs($errorLogs, $res, $req);
+                return;
+            }
+
+            $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
+            $user_id = getUserIdByEmail($data->email);
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->review = getRestaurantReview($rest_id);
+            $res->result = getRestaurantReview($user_id,$rest_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
+        /*
+         * API No. 8.3.2
+         * API Name : (비회원)특정 음식점 리뷰 조회 API
+         * 마지막 수정 날짜 : 20.08.20
+         */
+        case "getRestaurantReviewForNonmember":
+            http_response_code(200);
+            $rest_id = $vars['rest_id'];
+            if(!isValidRestaurant($rest_id)){
+                $res->isSuccess = FALSE;
+                $res->code = 210;
+                $res->message = "유효하지 않은 식당입니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
+            $res->result = getRestaurantReview(10000000,$rest_id);
+            $res->isSuccess = TRUE;
+            $res->code = 100;
+            $res->message = "조회 성공";
+            echo json_encode($res, JSON_NUMERIC_CHECK);
+            break;
         /*
          * API No. 8.4
          * API Name : 특정 음식점 정보 조회 API
@@ -387,12 +426,12 @@ try {
             $rest_id = $vars['rest_id'];
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->info = getRestaurantInfo($rest_id);
+            $res->result = getRestaurantInfo($rest_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -410,12 +449,12 @@ try {
             $menu_id = $vars['menu_id'];
             if(!isValidMenu($menu_id, $rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 203;
+                $res->code = 213;
                 $res->message = "유효하지 않은 메뉴입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->additional_option = getMenuOption($menu_id);
+            $res->result = getMenuOption($menu_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -443,8 +482,9 @@ try {
             $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
             $user_id = getUserIdByEmail($data->email);
 
-            $res->touch_order_count = getTouchOrderCount($user_id);
-            $res->touch_order_list = getTouchOrderList($user_id);
+            $result['touch_order_count'] = getTouchOrderCount($user_id);
+            $result['touch_order_list'] = getTouchOrderList($user_id);
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -472,8 +512,9 @@ try {
             $data = getDataByJWToken($jwt, JWT_SECRET_KEY);
             $user_id = getUserIdByEmail($data->email);
 
-            $res->call_order_count = getCallOrderCount($user_id);
-            $res->call_order_list = getCallOrderList($user_id);
+            $result['call_order_count'] = getCallOrderCount($user_id);
+            $result['call_order_list'] = getCallOrderList($user_id);
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -490,13 +531,17 @@ try {
             $order_id = $vars['order_id'];
             if(!isValidOrder($order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 206;
+                $res->code = 214;
                 $res->message = "유효하지 않은 주문번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-            $res->order_info = getOrderInfo($order_id);
-            $res->ordered_menu = getOrderedMenu($order_id);
+            $order_info = getOrderInfo($order_id);
+            $ordered_menu = getOrderedMenu($order_id);
+
+            $result['order_info'] = $order_info;
+            $result['ordered_menu'] = $ordered_menu;
+            $res->result = $result;
             $res->isSuccess = TRUE;
             $res->code = 100;
             $res->message = "조회 성공";
@@ -526,22 +571,22 @@ try {
 
             if($req->rest_id == null || $req->menu_id == null  || $req->quantity == null){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
-                $res->message = "rest_id 또는 menu_id 입력안됨 or quantity == 0";
+                $res->code = 220;
+                $res->message = "입력되지 않은 정보가 있습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
 
             if(!isValidRestaurant($req->rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(!isValidMenu($req->menu_id, $req->rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 203;
+                $res->code = 213;
                 $res->message = "유효하지 않은 메뉴입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -549,7 +594,7 @@ try {
 
             if($req->option_id != 0 && !isValidOption($req->option_id, $req->menu_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 203;
+                $res->code = 215;
                 $res->message = "유효하지 않은 옵션입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -563,7 +608,7 @@ try {
                 else{
                     if(isItemExistInTheOrderPad($user_id, $req->menu_id, $req->option_id)){
                         $res->isSuccess = FALSE;
-                        $res->code = 210;
+                        $res->code = 230;
                         $res->message = "이미 추가된 메뉴입니다.";
                         echo json_encode($res, JSON_NUMERIC_CHECK);
                         break;
@@ -602,7 +647,7 @@ try {
             $order_pad_id = $vars['order_pad_id'];
             if(!isValidOrderPadId($order_pad_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 203;
+                $res->code = 212;
                 $res->message = "존재하지 않는 주문표 번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -665,14 +710,14 @@ try {
             if($req->order_id==null ||  $req->payment_type == null ||
                 $req->order_type == null){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
-                $res->message = "정보 누락 or quantity == 0";
+                $res->code = 220;
+                $res->message = "입력되지 않은 정보가 있습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isValidOrder($req->order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 230;
                 $res->message = "주문번호가 이미 존재합니다";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -680,16 +725,22 @@ try {
 
             if(!($req->payment_type == '신용카드' || $req->payment_type == '현금' || $req->payment_type == '요기서 1초 결제')){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 216;
                 $res->message = "결제방식을 확인해주세요.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
-
+            if(isOrderPadEmpty($user_id)){
+                $res->isSuccess = FALSE;
+                $res->code = 218;
+                $res->message = "주문표가 비었습니다.";
+                echo json_encode($res, JSON_NUMERIC_CHECK);
+                break;
+            }
             $rest_id = getCurrentRestaurantID($user_id);
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -710,14 +761,14 @@ try {
             for($i = 0; $i<$order_pad_list_count; $i++){
                 if(!isValidMenu($order_pad_list[$i]['menu_id'], $rest_id)){
                     $res->isSuccess = FALSE;
-                    $res->code = 203;
+                    $res->code = 213;
                     $res->message = "유효하지 않은 메뉴입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
                 }
                 if($order_pad_list[$i]['option_id'] != 0 && !isValidOption($order_pad_list[$i]['option_id'], $order_pad_list[$i]['menu_id'])){
                     $res->isSuccess = FALSE;
-                    $res->code = 203;
+                    $res->code = 215;
                     $res->message = "유효하지 않은 옵션입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
@@ -742,21 +793,21 @@ try {
             if($req->order_id==null ||  $req->payment_type == null ||
                 $req->order_type == null){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
-                $res->message = "정보 누락 or quantity == 0";
+                $res->code = 220;
+                $res->message = "입력되지 않은 정보가 있습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isValidOrder($req->order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 230;
                 $res->message = "주문번호가 이미 존재합니다";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(!($req->payment_type == '신용카드' || $req->payment_type == '현금' || $req->payment_type == '요기서 1초 결제')){
                 $res->isSuccess = FALSE;
-                $res->code = 100;
+                $res->code = 216;
                 $res->message = "결제방식을 확인해주세요.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -771,7 +822,7 @@ try {
 
             if(!isValidRestaurant($rest_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 202;
+                $res->code = 210;
                 $res->message = "유효하지 않은 식당입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -790,14 +841,14 @@ try {
             for($i = 0; $i<$order_pad_list_count; $i++){
                 if(!isValidMenu($order_pad_list[$i]->menu_id, $rest_id)){
                     $res->isSuccess = FALSE;
-                    $res->code = 203;
+                    $res->code = 213;
                     $res->message = "유효하지 않은 메뉴입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
                 }
                 if($order_pad_list[$i]->option_id != 0 && !isValidOption($order_pad_list[$i]->option_id, $order_pad_list[$i]->menu_id)){
                     $res->isSuccess = FALSE;
-                    $res->code = 203;
+                    $res->code = 215;
                     $res->message = "유효하지 않은 옵션입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
@@ -834,7 +885,7 @@ try {
             $order_id = $vars['order_id'];
             if(!isValidOrder($order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 206;
+                $res->code = 214;
                 $res->message = "유효하지 않은 주문번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -965,21 +1016,21 @@ try {
 
             if(strlen($req->card_number) != 16 || !is_numeric($req->card_number)){
                 $res->isSuccess = FALSE;
-                $res->code = 211;
+                $res->code = 240;
                 $res->message = "카드 번호를 확인해주세요.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(strlen($req->cvc) != 3 || !is_numeric($req->cvc)){
                 $res->isSuccess = FALSE;
-                $res->code = 212;
+                $res->code = 241;
                 $res->message = "cvc를 확인해주세요.(3자리)";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(strlen($req->password) != 4 || !is_numeric($req->password)){
                 $res->isSuccess = FALSE;
-                $res->code = 213;
+                $res->code = 242;
                 $res->message = "비밀번호를 확인해주세요.(4자리)";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -987,7 +1038,7 @@ try {
             if(isCardExist($user_id,$req->card_number)){
                 if(!isCardDeleted($user_id,$req->card_number)){
                     $res->isSuccess = FALSE;
-                    $res->code = 210;
+                    $res->code = 230;
                     $res->message = "이미 존재하는 카드입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
@@ -1031,7 +1082,7 @@ try {
             $card_number = $vars{'card_number'};
             if(!isCardExist($user_id, $card_number)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 212;
                 $res->message = "존재하지 않는 카드입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1040,7 +1091,7 @@ try {
             else{
                 if(isCardDeleted($user_id, $card_number)){
                     $res->isSuccess = FALSE;
-                    $res->code = 211;
+                    $res->code = 231;
                     $res->message = "이미 삭제된 카드입니다.";
                     echo json_encode($res, JSON_NUMERIC_CHECK);
                     break;
@@ -1076,7 +1127,7 @@ try {
 
             if($req->payment_password != getPaymentPassword($user_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 301;
+                $res->code = 243;
                 $res->message = "기존 비밀번호가 일치하지 않습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1084,14 +1135,14 @@ try {
 
             if(strlen($req->payment_password)!=6||strlen($req->new_payment_password) != 6 || !is_numeric($req->new_payment_password)){
                 $res->isSuccess = FALSE;
-                $res->code = 302;
+                $res->code = 242;
                 $res->message = "비밀번호를 확인해주세요(6자리).";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if($req->new_payment_password != $req->check_password){
                 $res->isSuccess = FALSE;
-                $res->code = 303;
+                $res->code = 244;
                 $res->message = "입력된 비밀번호가 동일하지 않습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1127,14 +1178,14 @@ try {
 
             if(!is_numeric($req->phone) || strlen($req->phone) != 11){
                 $res->isSuccess = FALSE;
-                $res->code = 204;
+                $res->code = 250;
                 $res->message = "전화번호 확인 필요";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isPhoneExist($req->phone, $user_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 251;
                 $res->message = "이미 등록된 전화번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1169,7 +1220,7 @@ try {
 
             if(isNicknameExist($req->nickname)){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 250;
                 $res->message = "이미 존재하는 닉네임입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1234,7 +1285,7 @@ try {
             $res->result = getRecentLocation($user_id);
             $res->isSuccess = TRUE;
             $res->code = 100;
-            $res->message = "최근 배달위치 조회 성공";
+            $res->message = "조회 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
 
@@ -1262,7 +1313,7 @@ try {
             $idx = $vars['idx'];
             if(!isLocationIdxExist($idx)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 212;
                 $res->message = "존재하지 않는 인덱스입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1283,42 +1334,42 @@ try {
             http_response_code(200);
             if(isNicknameExist($req->nickname)){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 260;
                 $res->message = "이미 존재하는 닉네임입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isEmailExist($req->email)){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 270;
                 $res->message = "이미 등록된 이메일입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(!filter_var($req->email, FILTER_VALIDATE_EMAIL) ){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 271;
                 $res->message = "잘못된 이메일 형식.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(!is_numeric($req->phone) || strlen($req->phone) != 11){
                 $res->isSuccess = FALSE;
-                $res->code = 204;
+                $res->code = 250;
                 $res->message = "전화번호 확인 필요";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isPhoneExist($req->phone)){
                 $res->isSuccess = FALSE;
-                $res->code = 205;
+                $res->code = 251;
                 $res->message = "이미 등록된 전화번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(strlen($req->payment_password)!=6||!is_numeric($req->payment_password)){
                 $res->isSuccess = FALSE;
-                $res->code = 302;
+                $res->code = 242;
                 $res->message = "결제비밀번호를 확인해주세요(6자리).";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1381,14 +1432,14 @@ try {
 
             if(!isValidOrder($req->order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 206;
+                $res->code = 214;
                 $res->message = "유효하지 않은 주문번호입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isReviewExist($req->order_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 210;
+                $res->code = 230;
                 $res->message = "이미 리뷰를 작성했습니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1431,7 +1482,7 @@ try {
             $review_id = $vars['review_id'];
             if(!isValidReview($review_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 212;
                 $res->message = "존재하지 않는 리뷰입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
@@ -1512,21 +1563,21 @@ try {
             $review_id = $vars['review_id'];
             if(!isValidReview($review_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 212;
                 $res->message = "존재하지 않는 리뷰입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             if(isReviewAlreadyReport($user_id, $review_id)){
                 $res->isSuccess = FALSE;
-                $res->code = 208;
+                $res->code = 230;
                 $res->message = "이미 신고한 리뷰입니다.";
                 echo json_encode($res, JSON_NUMERIC_CHECK);
                 break;
             }
             reportReview($user_id, $review_id);
             $res->isSuccess = TRUE;
-            $res->code = 102;
+            $res->code = 101;
             $res->message = "리뷰 신고 성공";
             echo json_encode($res, JSON_NUMERIC_CHECK);
             break;
@@ -1772,8 +1823,8 @@ try {
          */
         case "getTodayDiscountRestaurantForNonmember":http_response_code(200);
             $region = $_GET['region'];
-            $delivery_discount = getTodayDeliveryDiscountRestaurantForNonmenber($user_id);
-            $discount_rate = getTodayDiscountRateRestaurantForNonmenber($user_id);
+            $delivery_discount = getTodayDeliveryDiscountRestaurantForNonmenber($region);
+            $discount_rate = getTodayDiscountRateRestaurantForNonmenber($region);
             $res->result = array($delivery_discount, $discount_rate);
             $res->isSuccess = TRUE;
             $res->code = 100;
@@ -1862,7 +1913,7 @@ try {
     }
 } catch (\Exception $e) {
     echo "sql 오류";
-    return getSQLErrorException($errorLogs, $e, $req);
+   // return getSQLErrorException($errorLogs, $e, $req);
 
     return 0;
 }

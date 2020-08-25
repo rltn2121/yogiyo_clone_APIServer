@@ -12,16 +12,18 @@ date_default_timezone_set('Asia/Seoul');
 ini_set('default_charset', 'utf8mb4');
 
 //에러출력하게 하는 코드
-error_reporting(E_ALL); ini_set("display_errors", 1);
+//error_reporting(E_ALL); ini_set("display_errors", 1);
 
 //Main Server API
 $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) {
 
     $r->addRoute('GET', '/jwt', ['MainController', 'validateJwt']);
-    $r->addRoute('POST', '/jwt', ['MainController', 'createJwt']);
-
+    //$r->addRoute('POST', '/jwt', ['MainController', 'createJwt']);
     // JWT TEST
-    $r->addRoute('GET', '/test', ['MainController', 'testJWT']);
+    //$r->addRoute('GET', '/test', ['MainController', 'testJWT']);
+
+    // 0. 로그인
+    $r->addRoute('POST', '/login', ['MainController', 'createJwt']);
 
     // 7. 최근 검색어 전체 삭제
     $r->addRoute('DELETE', '/keyword/all', ['IndexController', 'deleteAllRecentSearchKeyword']);
@@ -32,14 +34,15 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     // 2. 찜 하기 / 취소하기
     $r->addRoute('PATCH', '/favorite/{rest_id}', ['IndexController', 'addFavorite']);
 
-    // 3. 카테고리별 음식점 조회
+    // 3.1 카테고리별 음식점 조회
     $r->addRoute('GET', '/search/restaurant', ['IndexController', 'getRestaurantByCategory']);
-    // 3. 카테고리별 음식점 조회(비회원)
+
+    // 3.2 (비회원)카테고리별 음식점 조회
     $r->addRoute('GET', '/non-member/search/restaurant', ['IndexController', 'getRestaurantByCategoryForNonmember']);
-    // 4. 메뉴 검색
+    // 4.1 메뉴 검색
     $r->addRoute('GET', '/search/menu', ['IndexController', 'findMenu']);
 
-    // 4. 메뉴 검색(비회원)
+    // 4.2 (비회원)메뉴 검색
     $r->addRoute('GET', '/non-member/search/menu', ['IndexController', 'findMenuForNonmember']);
 
     // 5. 최근 검색어 조회
@@ -56,8 +59,11 @@ $dispatcher = FastRoute\simpleDispatcher(function (FastRoute\RouteCollector $r) 
     // 8.2 특정 음식점 메뉴 조회
     $r->addRoute('GET', '/restaurant/{rest_id}/menu', ['IndexController', 'getRestaurantMenu']);
 
-    // 8.3 특정 음식점 리뷰 조회
+    // 8.3.1 특정 음식점 리뷰 조회
     $r->addRoute('GET', '/restaurant/{rest_id}/review', ['IndexController', 'getRestaurantReview']);
+
+    // 8.3.2 (비회원)특정 음식점 리뷰 조회
+    $r->addRoute('GET', '/non-member/restaurant/{rest_id}/review', ['IndexController', 'getRestaurantReviewForNonmember']);
 
     // 8.4 특정 음식점 정보 조회
     $r->addRoute('GET', '/restaurant/{rest_id}/info', ['IndexController', 'getRestaurantInfo']);

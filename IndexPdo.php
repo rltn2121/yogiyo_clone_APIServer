@@ -16,7 +16,7 @@ function getFavoriteCount($user_id)
     $st = null;
     $pdo = null;
 
-    return $res[0];
+    return intval($res[0]['total_count']);
 }
 function getFavoriteRestaurant($user_id)
 {
@@ -968,32 +968,53 @@ where restaurant_id=?;";
 
     return $res;
 }
-function getRestaurantReview($rest_id)
+function getRestaurantReview($user_id, $rest_id)
 {
     $pdo = pdoSqlConnect();
-    $query="select review_id, menu.restaurant_id, nickname, profile_image_url.image_url, group_concat(distinct concat(menu_name, '/', quantity) separator ',') as order_info, group_concat(distinct review_image.image_url separator ';') as review_image_url,
-       case
-    when timestampdiff(hour,review.created_at, now()) <1 then concat(timestampdiff(minute,review.created_at, now()), '분전')
-    when timestampdiff(day,review.created_at, now()) <1 then concat(timestampdiff(hour,review.created_at, now()), '시간전')
-    when timestampdiff(day,review.created_at, now()) <2 then '어제'
-    when timestampdiff(day,review.created_at, now()) <7 then concat(timestampdiff(day,review.created_at, now()), '일전')
-else    date_format(review.created_at, '%Y.%m.%d %H:%i')
-end as review_submit_time,
-       round((taste_score + quantity_score + delivery_score) / 3,1) as score,
-       taste_score, quantity_score,  delivery_score, review.contents as review_contents, review_owner_comment.contents as reply_contents,
-         case
-    when timestampdiff(hour,review_owner_comment.created_at, now()) <1 then concat(timestampdiff(minute,review_owner_comment.created_at, now()), '분전')
-    when timestampdiff(day,review_owner_comment.created_at, now()) <1 then concat(timestampdiff(hour,review_owner_comment.created_at, now()), '시간전')
-    when timestampdiff(day,review_owner_comment.created_at, now()) <2 then '어제'
-    when timestampdiff(day,review_owner_comment.created_at, now()) <7 then concat(timestampdiff(day,review_owner_comment.created_at, now()), '일전')
-else    date_format(review_owner_comment.created_at, '%Y.%m.%d %H:%i')
-end as review_submit_time
-from ((((((review left outer join orders using (order_id)) left outer join review_owner_comment using (review_id)) left outer join users using (user_id))
-         left outer join profile_image_url using (type)) left outer join ordered_menu using (order_id)) left outer join menu using (menu_id)) left outer join review_image using (review_id)
-where menu.restaurant_id = ?
+    $query="select restaurant_id,
+       review_id,
+       users.nickname,
+       profile_image_url.image_url                                   as profile_image,
+       group_concat(distinct concat(menu_name, '/', quantity) separator ',') as order_info,
+       group_concat(distinct review_image.image_url separator '; ')           as review_image,
+       round((taste_score + quantity_score + delivery_score) / 3, 1) as score,
+       taste_score,
+       quantity_score,
+       delivery_score,
+       ifnull(status,0) as review_like_status,
+        case
+           when timestampdiff(hour, review.created_at, now()) < 1
+               then concat(timestampdiff(minute, review.created_at, now()), '분전')
+           when timestampdiff(day, review.created_at, now()) < 1
+               then concat(timestampdiff(hour, review.created_at, now()), '시간전')
+           when timestampdiff(day, review.created_at, now()) < 2 then '어제'
+           when timestampdiff(day, review.created_at, now()) < 7
+               then concat(timestampdiff(day, review.created_at, now()), '일전')
+           else date_format(review.created_at, '%Y.%m.%d %H:%i')
+           end                                                               as review_submit_time,
+        review.contents                                               as review_contents,
+        case
+           when timestampdiff(hour, review_owner_comment.created_at, now()) < 1 then concat(
+                   timestampdiff(minute, review_owner_comment.created_at, now()), '분전')
+           when timestampdiff(day, review_owner_comment.created_at, now()) < 1 then concat(
+                   timestampdiff(hour, review_owner_comment.created_at, now()), '시간전')
+           when timestampdiff(day, review_owner_comment.created_at, now()) < 2 then '어제'
+           when timestampdiff(day, review_owner_comment.created_at, now()) < 7 then concat(
+                   timestampdiff(day, review_owner_comment.created_at, now()), '일전')
+           else date_format(review_owner_comment.created_at, '%Y.%m.%d %H:%i')
+           end                                                               as reply_submit_time,
+        review_owner_comment.contents                                 as reply_contents
+from ((((((review left outer join review_owner_comment using (review_id))
+    left outer join review_image using (review_id))
+    left outer join (orders left outer join (ordered_menu left outer join (select menu_id, menu_name from menu) as t using (menu_id)) using (order_id)) using (order_id))
+    left outer join restaurant using (restaurant_id))
+         left outer join (users left outer join profile_image_url using (type)) using (user_id))) left outer join (select review_id, status
+from review_like
+where user_id= ? ) as s using (review_id)
+where restaurant_id = ?
 group by review_id;";
     $st = $pdo->prepare($query);
-    $st->execute([$rest_id]);
+    $st->execute([$user_id, $rest_id]);
     $st->setFetchMode(PDO::FETCH_ASSOC);
     $res = $st->fetchAll();
 
@@ -1065,7 +1086,7 @@ where user_id= ? and order_type='터치';";
     $st = null;
     $pdo = null;
 
-    return $res[0];
+    return intval($res[0]['touch_num']);
 }
 function getCallOrderCount($user_id)
 {
@@ -1081,7 +1102,7 @@ where user_id=? and order_type='전화';";
     $st = null;
     $pdo = null;
 
-    return $res[0];
+    return intval($res[0]['call_num']);
 }
 function getTouchOrderList($user_id)
 {
@@ -1123,19 +1144,29 @@ function getOrderInfo($order_id)
 {
     $pdo = pdoSqlConnect();
     // get order information
-    $query = "select restaurant_name,delivery_status,order_id,date_format(orders.created_at, '%Y.%m.%d %H:%i') as order_date,
+    $query = "select restaurant_name,
+       delivery_status,
+       order_id,
+       date_format(orders.created_at, '%Y.%m.%d %H:%i')              as order_date,
        concat((select sum(price + IFNULL(extra_charge, 0))
-        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_menu.extra_charge
-              from (ordered_menu  left outer join menu using (menu_id))
-                       left outer join additional_option using (option_id)
-              where ordered_menu.order_id = ?) as temp),'원' )as sum_menu_price,
-       concat(orders.delivery_price, '원') as delivery_price,concat(orders.delivery_discount,'원')as delivery_discount,
+               from (select ordered_menu.price,
+                            ordered_menu.extra_charge
+                     from (ordered_menu left outer join menu using (menu_id))
+                              left outer join additional_option using (option_id)
+                     where ordered_menu.order_id = ?) as temp), '원') as sum_menu_price,
+       concat(orders.delivery_price, '원')                            as delivery_price,
+       concat(orders.delivery_discount, '원')                         as delivery_discount,
        concat(((select sum(price + IFNULL(extra_charge, 0))
-        from (select ordered_menu.order_id,menu_name,quantity,ordered_menu.price,option_name,ordered_menu.extra_charge
-              from (ordered_menu  left outer join menu using (menu_id))
-                       left outer join additional_option using (option_id)
-              where ordered_menu.order_id = ?) as temp) + orders.delivery_price - orders.delivery_discount),'원') as actual_price,
-       orders.payment_type,users.phone,concat(users.region, ' ', users.address) as user_location ,request
+                from (select ordered_menu.price,
+                             ordered_menu.extra_charge
+                      from (ordered_menu left outer join menu using (menu_id))
+                               left outer join additional_option using (option_id)
+                      where ordered_menu.order_id = ?) as temp) + orders.delivery_price - orders.delivery_discount),
+              '원')                                                   as actual_price,
+       orders.payment_type,
+        concat(users.phone".",' ') as phone,
+       concat(users.region, ' ', users.address)                      as user_location,
+       request
 from (orders join restaurant using (restaurant_id))
          join users using (user_id)
 where orders.order_id = ?;";
@@ -1410,7 +1441,7 @@ where user_id=?;";
 function getUserInfo($user_id)
 {
     $pdo = pdoSqlConnect();
-    $query = "select `email`, phone, nickname
+    $query = "select `email`, concat(users.phone".",' ') as phone, nickname
 from users
 where user_id=?;";
 
@@ -2360,15 +2391,15 @@ function getFastDeliverRestaurantForNonmenber($region)
        ifnull(round(avg((taste_score + quantity_score + delivery_score) / 3), 1), 0) as score,
        count(review_id)                                                              as review_num,
        estimated_delivery_time,
-       grouped_sales,
+       best_menu,
        image_url
 from (restaurant left outer join (orders left outer join review using (order_id)) using (restaurant_id))
-         left outer join (select restaurant_id, group_concat(temp.menu_name order by temp.sales desc) as grouped_sales
+         left outer join (select restaurant_id, group_concat(temp.menu_name order by temp.sales desc) as best_menu
                           from (select orders.restaurant_id, menu_name, sum(quantity) as sales
                                 from orders
                                          left outer join (ordered_menu left outer join menu using (menu_id)) using (order_id)
                                 group by restaurant_id, menu_name) as temp
-                          group by restaurant_id) as grouped_menu using (restaurant_id)
+                          group by restaurant_id) as best_menu using (restaurant_id)
 where restaurant.region = ?
 group by restaurant_id
 order by restaurant.estimated_delivery_time;";
