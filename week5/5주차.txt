@@ -1,0 +1,56 @@
+로그인 유지방법
+
+HTTP -> stateless
+
+● client <-> server email, pw 매번 보내야함
+-> 1. cookie(client) - session(session) 방식 => stateful 로 바뀜
+특정 유저에 대한 session_id 생성
+email pw 전송 -> 유저정보 있는지 확인 -> sessoin id 반환 -> cookie에 저장
+session id 값만 확인하면 됨
+session id 전송 -> user db에서 비교 안함, session에서 확인
+☆ 장점: 중요한 정보가 아니라 session id를 보냄
+☆ 단점: 추가적인 공간 필요, 확장성 떨어짐(서버 추가하면 session 동기화해야함)
+
+-> 2. token - JWT(Json Web Token)
+email, password db에서 인증
+jwt 구성: header, payload, signature
+1) header -> 암호 알고리즘 종류(ex. RSA, ...)
+ => header 인코딩
+
+2) payload -> 특정정보 저장(body와 비슷,***유효기간***) 
+ => payload 인코딩(base 64) / 인코딩 안하면 전송할 때 정보 깨질 수 있음
+ => jwt의 유효기간 포함
+
+3) signature -> jwt 저장공간 따로 두지 않음 (stateless)
+ => 내가 발급한 토큰인지 확인
+ => header, payload 가져옴 + header에 저장된 방법으로 암호화 + server만 가지고 있는 key
+
+
+*) 단점 -> 
+--------------------------------------------------------------------------------------------------------------
+| 1. jwt 유효성 검사(내 서버에서 발급한 jwt인지 확인) -> server의 secret key를 이용해서 복호화 
+|  -> 복호화한 header, payload와 jwt의 header, payload 비교
+|
+|  2. payload의 data를 바탕으로 사용                                                                               
+---------------------------------------------------------------------------------------------------------------
+
+-> 3. oAuth 2.0 - 인증 프레임워크
+client / server / framework
+
+
+client -> (email, pw, permission list) -> 카카오톡 -> access token(permission list에 접근 가능), refresh token 발급
+
+refresh token -> access token 갱신하기 위해 카톡 서버에 같이 보냄
+client -> access token 서버에 보냄 -> 카카오톡 서버에 access token 보냄 -> 정보 제공 -> server에서 client에게 jwt 발급
+
+카톡서버에서 사용자가 이메일을 받아서 서버에 넘길 경우,
+카톡서버에서 받아온 정보인지 확인 불가능.
+그러므로 access token을 넘겨서 요청해야함.
+
+※ jwt 조작해서 전송
+※ token header에 들어감
+
+********************** 헤더에 x-access-token -> jwt 보냄 ***********************
+getDataByJWToken -> payload 데이터 복호화
+isValidUser -> db에 정보 있는지
+isValidHeader -> token 일치하는지
